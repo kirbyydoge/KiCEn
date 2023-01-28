@@ -18,6 +18,7 @@ public struct Move {
     public Coordinate begin;
     public Coordinate end;
     public bool en_passant;
+    public int castle;
 
     public Move(Piece held, Piece target, Coordinate begin, Coordinate end) {
         this.held = held;
@@ -25,14 +26,16 @@ public struct Move {
         this.begin = begin;
         this.end = end;
         en_passant = false;
+        castle = 0;
     }
 
-    public Move(Piece held, Piece target, Coordinate begin, Coordinate end, bool en_passant) {
+    public Move(Piece held, Piece target, Coordinate begin, Coordinate end, bool en_passant, int castle) {
         this.held = held;
         this.target = target;
         this.begin = begin;
         this.end = end;
         this.en_passant = en_passant;
+        this.castle = castle;
     }
 };
 
@@ -49,6 +52,8 @@ public static class ChessGame {
     public static Piece[,] board;
     public static List<Piece> white_pieces;
     public static List<Piece> black_pieces;
+    public static Piece white_king;
+    public static Piece black_king;
     public static int turn;
 
     static ChessGame() {
@@ -79,8 +84,8 @@ public static class ChessGame {
             else if (cmd == 'N') { piece = new Piece(PieceColor.WHITE, PieceType.KNIGHT); }
             else if (cmd == 'b') { piece = new Piece(PieceColor.BLACK, PieceType.BISHOP); }
             else if (cmd == 'B') { piece = new Piece(PieceColor.WHITE, PieceType.BISHOP); }
-            else if (cmd == 'k') { piece = new Piece(PieceColor.BLACK, PieceType.KING); }
-            else if (cmd == 'K') { piece = new Piece(PieceColor.WHITE, PieceType.KING); }
+            else if (cmd == 'k') { piece = new Piece(PieceColor.BLACK, PieceType.KING); black_king = piece; }
+            else if (cmd == 'K') { piece = new Piece(PieceColor.WHITE, PieceType.KING); white_king = piece; }
             else if (cmd == 'q') { piece = new Piece(PieceColor.BLACK, PieceType.QUEEN); }
             else if (cmd == 'Q') { piece = new Piece(PieceColor.WHITE, PieceType.QUEEN); }
             else if (cmd == 'r') { piece = new Piece(PieceColor.BLACK, PieceType.ROOK); }
@@ -91,8 +96,8 @@ public static class ChessGame {
             }
 
             if (piece != null) {
-                board[row, col++] = piece;
                 piece.location = new Coordinate(row, col);
+                board[row, col++] = piece;
                 if (piece.color == PieceColor.WHITE) {
                     white_pieces.Add(piece);
                 }
@@ -130,45 +135,65 @@ public static class ChessGame {
     }
 
     public static void make_move(Move move) {
-        board[move.begin.rank, move.begin.file] = null;
         if (move.en_passant) {
+            board[move.begin.rank, move.begin.file] = null;
             board[move.begin.rank, move.end.file] = null;
-        }
-        board[move.end.rank, move.end.file] = move.held;
-        move.held.location = move.end;
-
-        if (move.target != null) { 
+            board[move.end.rank, move.end.file] = move.held;
             move.target.active = false;
         }
+        else if (move.castle != 0) {
+            board[move.begin.rank, move.begin.file] = null;
+            board[move.end.rank, move.castle < 0 ? 0 : 7] = null;
+            board[move.end.rank, move.end.file] = move.held;
+            board[move.end.rank, move.end.file - move.castle] = move.target;
+            move.target.location.file = move.end.file + move.castle;
+        }
+        else {
+            board[move.begin.rank, move.begin.file] = null;
+            board[move.end.rank, move.end.file] = move.held;
+            if (move.target != null) {
+                move.target.active = false;
+            }
+        }
+        
         player_to_move = player_to_move == PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE;
 
         if (move.held.move_count == 0) { 
             move.held.first_move = turn;
         }
+        move.held.location = move.end;
         move.held.move_count++;
         turn++;
     }
 
     public static void unmake_move(Move move) {
-        board[move.begin.rank, move.begin.file] = move.held;
-        move.held.location = move.begin;
         if (move.en_passant) {
-            board[move.end.rank, move.end.file] = null;
+            board[move.begin.rank, move.begin.file] = move.held;
             board[move.begin.rank, move.end.file] = move.target;
-        }
-        else { 
-            board[move.end.rank, move.end.file] = move.target;
-        }
-
-        if (move.target != null) { 
-            move.target.location = move.end;
+            board[move.end.rank, move.end.file] = null;
             move.target.active = true;
         }
+        else if (move.castle != 0) {
+            board[move.begin.rank, move.begin.file] = move.held;
+            board[move.end.rank, move.castle < 0 ? 0 : 7] = move.target;
+            board[move.end.rank, move.end.file] = null;
+            board[move.end.rank, move.end.file - move.castle] = null;
+            move.target.location.file = move.castle < 0 ? 0 : 7;
+        }
+        else {
+            board[move.begin.rank, move.begin.file] = move.held;
+            board[move.end.rank, move.end.file] = move.target;
+            if (move.target != null) {
+                move.target.active = false;
+            }
+        }
+
         player_to_move = player_to_move == PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE;
 
         if (move.held.move_count == 1) {
             move.held.first_move = -1;
         }
+        move.held.location = move.begin;
         move.held.move_count--;
         turn--;
     }
@@ -178,6 +203,7 @@ public static class ChessGame {
     public static List<Move> generate_moves(Coordinate begin) {
         List<Move> moves = null;
         Piece piece = pick_up(begin);
+        Piece king = player_to_move == PieceColor.WHITE ? white_king : black_king;
         switch (piece.type) {
             case PieceType.PAWN: moves = Piece.generate_pawn_moves(piece, begin); break;
             case PieceType.KNIGHT: moves = Piece.generate_knight_moves(piece, begin); break;
@@ -185,6 +211,14 @@ public static class ChessGame {
             case PieceType.ROOK: moves = Piece.generate_rook_moves(piece, begin); break;
             case PieceType.QUEEN: moves = Piece.generate_queen_moves(piece, begin); break;
             case PieceType.KING: moves = Piece.generate_king_moves(piece, begin); break;
+        }
+        for (int i = moves.Count - 1; i >= 0; i--) {
+            Move cur_move = moves[i];
+            make_move(cur_move);
+            if (Piece.cell_under_attack(king.location, king.color)) {
+                moves.RemoveAt(i);
+            }
+            unmake_move(cur_move);
         }
         return moves;
     }
