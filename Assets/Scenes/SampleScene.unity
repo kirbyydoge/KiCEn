@@ -217,8 +217,9 @@ GameObject:
   m_Component:
   - component: {fileID: 563477389}
   - component: {fileID: 563477388}
+  - component: {fileID: 563477390}
   m_Layer: 0
-  m_Name: BoardRenderer
+  m_Name: Board
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -238,12 +239,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   num_ranks: 8
   num_files: 8
-  tile_scale: 1
-  piece_scale: 1
-  color_dark_square: {r: 0, g: 0, b: 0, a: 255}
-  color_white_square: {r: 255, g: 255, b: 255, a: 255}
-  bg_dark_piece: {r: 255, g: 255, b: 255, a: 255}
+  tile_scale: 2
+  piece_scale: 1.5
+  color_white_square: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 255}
+  color_dark_square: {r: 0.49056602, g: 0.34015664, b: 0.34015664, a: 255}
+  color_capture_square: {r: 0.8207547, g: 0.22841759, b: 0.22841759, a: 255}
+  color_just_moved: {r: 0.4107597, g: 0.5377358, b: 0.3221342, a: 255}
   bg_white_piece: {r: 255, g: 255, b: 255, a: 255}
+  bg_dark_piece: {r: 255, g: 255, b: 255, a: 255}
   prefab_tile: {fileID: 8423989815401336634, guid: ea997847c0c99ff44b746cb32040dfe7, type: 3}
   prefab_piece: {fileID: 8643730715205433080, guid: 0df3e52b7ccd78841856832b397a0a6c, type: 3}
   camera_main: {fileID: 519420031}
@@ -259,6 +262,7 @@ MonoBehaviour:
   sprite_black_rook: {fileID: -869534806, guid: aa7d5ea0c6895294893d41699fb03d1a, type: 3}
   sprite_black_queen: {fileID: 929319698, guid: aa7d5ea0c6895294893d41699fb03d1a, type: 3}
   sprite_black_king: {fileID: 389083125, guid: aa7d5ea0c6895294893d41699fb03d1a, type: 3}
+  sprite_move: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!4 &563477389
 Transform:
   m_ObjectHideFlags: 0
@@ -274,3 +278,16 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &563477390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 563477387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 361a03bc1b412a243bae18cbf60307bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  main_camera: {fileID: 519420031}
