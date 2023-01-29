@@ -95,25 +95,27 @@ public class Piece {
                 if (target != null && target.color != piece.color) {
                     moves.Add(new Move(piece, target, begin, end));
                 }
-                end = new Coordinate(begin.rank - 1, begin.file - 1);
-                target = ChessGame.get_piece(end);
-                if (target != null && target.color != piece.color) {
-                    moves.Add(new Move(piece, target, begin, end));
-                }
                 // En Passant
                 en_passant_cell = new Coordinate(begin.rank, begin.file + 1);
                 en_passant_target = ChessGame.get_piece(en_passant_cell);
                 if (en_passant_target != null && en_passant_target.type == PieceType.PAWN
                     && en_passant_target.first_move == ChessGame.turn - 1
                     && en_passant_target.color != piece.color) {
-                    moves.Add(new Move(piece, en_passant_target, begin, en_passant_cell, true, 0));
+                    moves.Add(new Move(piece, en_passant_target, begin, end, true, 0));
                 }
+                // Captures
+                end = new Coordinate(begin.rank - 1, begin.file - 1);
+                target = ChessGame.get_piece(end);
+                if (target != null && target.color != piece.color) {
+                    moves.Add(new Move(piece, target, begin, end));
+                }
+                // En Passant
                 en_passant_cell = new Coordinate(begin.rank, begin.file - 1);
                 en_passant_target = ChessGame.get_piece(en_passant_cell);
                 if (en_passant_target != null && en_passant_target.type == PieceType.PAWN
                     && en_passant_target.first_move == ChessGame.turn - 1
                     && en_passant_target.color != piece.color) {
-                    moves.Add(new Move(piece, en_passant_target, begin, en_passant_cell, true, 0));
+                    moves.Add(new Move(piece, en_passant_target, begin, end, true, 0));
                 }
                 break;
         }
@@ -363,6 +365,26 @@ public class Piece {
                         break;
                     }
                 }
+            }
+        }
+        Coordinate[] king_attacks = {
+            new Coordinate(cell.rank + 1, cell.file - 1),
+            new Coordinate(cell.rank + 1, cell.file + 1),
+            new Coordinate(cell.rank - 1, cell.file + 1),
+            new Coordinate(cell.rank - 1, cell.file - 1),
+            new Coordinate(cell.rank, cell.file - 1),
+            new Coordinate(cell.rank, cell.file + 1),
+            new Coordinate(cell.rank + 1, cell.file),
+            new Coordinate(cell.rank - 1, cell.file)
+        };
+        foreach (Coordinate dir in king_attacks) {
+            Coordinate end = dir;
+            if (!ChessGame.is_valid_cell(end)) {
+                continue;
+            }
+            attacker = ChessGame.get_piece_unsafe(end);
+            if (attacker != null && attacker.color != color && attacker.type == PieceType.KING) {
+                return true;
             }
         }
         return false;

@@ -15,7 +15,6 @@ public class BoardAction : MonoBehaviour {
     private Coordinate begin;
     private Coordinate end;
     private BoardRenderer board_renderer;
-    private Sprite held_sprite;
     private SpriteRenderer held_renderer;
     private List<Move> available_moves;
     private List<Move> played_moves;
@@ -40,7 +39,6 @@ public class BoardAction : MonoBehaviour {
             case ActionState.EMPTY:
                 if (Input.GetKeyDown(KeyCode.R)) {
                     if (played_moves.Count > 0) {
-                        Debug.Log("Take back.");
                         ChessGame.unmake_move(played_moves[played_moves.Count - 1]);
                         played_moves.RemoveAt(played_moves.Count - 1);
                         board_renderer.render_pieces();
