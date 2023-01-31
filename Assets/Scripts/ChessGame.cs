@@ -55,6 +55,7 @@ public static class ChessGame {
     public static Piece white_king;
     public static Piece black_king;
     public static int turn;
+    public static bool is_check_mate;
 
     static ChessGame() {
         board = new Piece[8, 8];
@@ -99,9 +100,11 @@ public static class ChessGame {
                 piece.location = new Coordinate(row, col);
                 board[row, col++] = piece;
                 if (piece.color == PieceColor.WHITE) {
+                    piece.lookup_index = white_pieces.Count;
                     white_pieces.Add(piece);
                 }
                 else {
+                    piece.lookup_index = black_pieces.Count;
                     black_pieces.Add(piece);
                 }
             }
@@ -184,7 +187,7 @@ public static class ChessGame {
             board[move.begin.rank, move.begin.file] = move.held;
             board[move.end.rank, move.end.file] = move.target;
             if (move.target != null) {
-                move.target.active = false;
+                move.target.active = true;
             }
         }
 
@@ -223,4 +226,23 @@ public static class ChessGame {
         return moves;
     }
 
+    public static List<List<Move>> generate_all_moves_auto() {
+        return generate_all_moves(player_to_move == PieceColor.WHITE ? white_pieces : black_pieces);
+    }
+
+    public static List<List<Move>> generate_all_moves(List<Piece> pieces) {
+        List<List<Move>> moves = new List<List<Move>>();
+        is_check_mate = true;
+        foreach (Piece p in pieces) {
+            List<Move> piece_moves = null;
+            if (p.active) {
+                piece_moves = generate_moves(p.location);
+                if (piece_moves.Count > 0) {
+                    is_check_mate = false;
+                }
+            }
+            moves.Add(piece_moves);
+        }
+        return moves;
+    }
 }

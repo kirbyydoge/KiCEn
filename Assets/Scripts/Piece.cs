@@ -9,6 +9,7 @@ public class Piece {
     public int first_move;
     public int move_count;
     public bool active;
+    public int lookup_index; // To accelerate move search
 
     public Piece(PieceColor color, PieceType type) {
         this.color = color;
@@ -258,6 +259,9 @@ public class Piece {
             new Coordinate(0, 1)
         };
         foreach (Coordinate dir in castle_directions) {
+            if (piece.first_move >= 0) {
+                break;
+            }
             Coordinate end = begin;  
             for (int i = 0; i < 8; i++) {
                 end.file += dir.file;
@@ -266,7 +270,6 @@ public class Piece {
                 }
                 Piece target = ChessGame.get_piece_unsafe(end);
                 if (target != null) {
-                    // Ben Eceyi cok seviyorum
                     if (target.type == PieceType.ROOK && target.color == piece.color && target.move_count == 0) {
                         end.file = begin.file + 2 * dir.file;
                         moves.Add(new Move(piece, target, begin, end, false, dir.file));

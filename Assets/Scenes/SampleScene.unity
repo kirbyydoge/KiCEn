@@ -241,8 +241,8 @@ MonoBehaviour:
   num_files: 8
   tile_scale: 2
   piece_scale: 1.5
-  color_white_square: {r: 0.6981132, g: 0.6981132, b: 0.6981132, a: 255}
-  color_dark_square: {r: 0.49056602, g: 0.34015664, b: 0.34015664, a: 255}
+  color_white_square: {r: 0.6037736, g: 0.6037736, b: 0.6037736, a: 255}
+  color_dark_square: {r: 0.4528302, g: 0.29690284, b: 0.29690284, a: 255}
   color_capture_square: {r: 0.8207547, g: 0.22841759, b: 0.22841759, a: 255}
   color_just_moved: {r: 0.4107597, g: 0.5377358, b: 0.3221342, a: 255}
   bg_white_piece: {r: 255, g: 255, b: 255, a: 255}

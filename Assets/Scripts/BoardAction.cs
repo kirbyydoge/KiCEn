@@ -5,7 +5,7 @@ using UnityEngine;
 public class BoardAction : MonoBehaviour {
 
     enum ActionState { 
-        EMPTY, MOVING
+        EMPTY, MOVING, OPPONENT, GAME_OVER
     }
 
     public Camera main_camera;
@@ -18,6 +18,8 @@ public class BoardAction : MonoBehaviour {
     private SpriteRenderer held_renderer;
     private List<Move> available_moves;
     private List<Move> played_moves;
+    private bool moves_valid;
+    private List<List<Move>> all_moves;
 
     void Start() {
         played_moves = new List<Move>();
@@ -29,12 +31,21 @@ public class BoardAction : MonoBehaviour {
         held_renderer.transform.localScale = Vector3.one * 2.5f;
         held_renderer.enabled = false;
         available_moves = null;
+        moves_valid = false;
     }
 
     void Update() {
         Vector3 mouse_pos = Input.mousePosition;
         Vector3 world_pos = main_camera.ScreenToWorldPoint(mouse_pos);
         world_pos.z = 0;
+        if (!moves_valid) {
+            all_moves = ChessGame.generate_all_moves_auto();
+            moves_valid = true;
+            if (ChessGame.is_check_mate) Debug.Log("Check mate!");
+        }
+        if (ChessGame.is_check_mate) {
+            //state = ActionState.GAME_OVER;
+        }
         switch (state) {
             case ActionState.EMPTY:
                 if (Input.GetKeyDown(KeyCode.R)) {
@@ -42,6 +53,7 @@ public class BoardAction : MonoBehaviour {
                         ChessGame.unmake_move(played_moves[played_moves.Count - 1]);
                         played_moves.RemoveAt(played_moves.Count - 1);
                         board_renderer.render_pieces();
+                        moves_valid = false;
                     }
                 }
                 if (Input.GetMouseButton(0)) {
@@ -53,7 +65,7 @@ public class BoardAction : MonoBehaviour {
                         held_renderer.enabled = true;
                         board_renderer.disable_cell(begin);
                         state = ActionState.MOVING;
-                        available_moves = ChessGame.generate_moves(begin);
+                        available_moves = all_moves[held_piece.lookup_index];
                         board_renderer.render_pieces();
                         board_renderer.render_moves(available_moves);
                     }
@@ -67,11 +79,27 @@ public class BoardAction : MonoBehaviour {
                     if (selected_move >= 0) { 
                         ChessGame.make_move(available_moves[selected_move]);
                         played_moves.Add(available_moves[selected_move]);
+                        moves_valid = false;
                     }
                     held_renderer.enabled = false;
                     board_renderer.enable_cell(begin);
                     state = ActionState.EMPTY;
                     board_renderer.render_pieces();
+                }
+                break;
+            case ActionState.OPPONENT:
+
+                moves_valid = false;
+                break;
+            case ActionState.GAME_OVER:
+                if (Input.GetKeyDown(KeyCode.R)) {
+                    if (played_moves.Count > 0) {
+                        ChessGame.unmake_move(played_moves[played_moves.Count - 1]);
+                        played_moves.RemoveAt(played_moves.Count - 1);
+                        board_renderer.render_pieces();
+                        state = ActionState.EMPTY;
+                        moves_valid = false;
+                    }
                 }
                 break;
         }
