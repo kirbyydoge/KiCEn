@@ -259,7 +259,7 @@ public class Piece {
             new Coordinate(0, 1)
         };
         foreach (Coordinate dir in castle_directions) {
-            if (piece.first_move >= 0) {
+            if (piece.first_move >= 0 || cell_under_attack(begin, piece.color)) {
                 break;
             }
             Coordinate end = begin;  

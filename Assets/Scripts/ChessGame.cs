@@ -149,7 +149,7 @@ public static class ChessGame {
             board[move.end.rank, move.castle < 0 ? 0 : 7] = null;
             board[move.end.rank, move.end.file] = move.held;
             board[move.end.rank, move.end.file - move.castle] = move.target;
-            move.target.location.file = move.end.file + move.castle;
+            move.target.location.file = move.end.file - move.castle;
         }
         else {
             board[move.begin.rank, move.begin.file] = null;
