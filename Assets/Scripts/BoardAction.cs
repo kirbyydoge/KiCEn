@@ -33,7 +33,8 @@ public class BoardAction : MonoBehaviour {
         held_renderer.enabled = false;
         available_moves = null;
         moves_valid = false;
-        opponent = new RandomAI();
+        //opponent = new RandomAI();
+        opponent = new NaiveTreeAI(4);
     }
 
     void Update() {

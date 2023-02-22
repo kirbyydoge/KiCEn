@@ -98,6 +98,7 @@ public static class ChessGame {
 
             if (piece != null) {
                 piece.location = new Coordinate(row, col);
+                piece.first_move = int.MinValue;
                 board[row, col++] = piece;
                 if (piece.color == PieceColor.WHITE) {
                     piece.lookup_index = white_pieces.Count;
@@ -203,19 +204,19 @@ public static class ChessGame {
 
     // We are intentionally avoiding polymorphism here. Readability comes second for this section.
     // Since the engine needs to generate moves millions of times, it needs to be as fast as possible.
-    public static List<Move> generate_moves(Coordinate begin) {
-        List<Move> moves = null;
+    public static void generate_moves(List<Move> moves, Coordinate begin) {
         Piece piece = pick_up(begin);
         Piece king = player_to_move == PieceColor.WHITE ? white_king : black_king;
+        int move_ptr = moves.Count;
         switch (piece.type) {
-            case PieceType.PAWN: moves = Piece.generate_pawn_moves(piece, begin); break;
-            case PieceType.KNIGHT: moves = Piece.generate_knight_moves(piece, begin); break;
-            case PieceType.BISHOP: moves = Piece.generate_bishop_moves(piece, begin); break;
-            case PieceType.ROOK: moves = Piece.generate_rook_moves(piece, begin); break;
-            case PieceType.QUEEN: moves = Piece.generate_queen_moves(piece, begin); break;
-            case PieceType.KING: moves = Piece.generate_king_moves(piece, begin); break;
+            case PieceType.PAWN: Piece.generate_pawn_moves(moves, piece, begin); break;
+            case PieceType.KNIGHT: Piece.generate_knight_moves(moves, piece, begin); break;
+            case PieceType.BISHOP: Piece.generate_bishop_moves(moves, piece, begin); break;
+            case PieceType.ROOK: Piece.generate_rook_moves(moves, piece, begin); break;
+            case PieceType.QUEEN: Piece.generate_queen_moves(moves, piece, begin); break;
+            case PieceType.KING: Piece.generate_king_moves(moves, piece, begin); break;
         }
-        for (int i = moves.Count - 1; i >= 0; i--) {
+        for (int i = moves.Count - 1; i >= move_ptr; i--) {
             Move cur_move = moves[i];
             make_move(cur_move);
             if (Piece.cell_under_attack(king.location, king.color)) {
@@ -223,7 +224,6 @@ public static class ChessGame {
             }
             unmake_move(cur_move);
         }
-        return moves;
     }
 
     public static List<List<Move>> generate_all_moves_auto() {
@@ -236,13 +236,29 @@ public static class ChessGame {
         foreach (Piece p in pieces) {
             List<Move> piece_moves = null;
             if (p.active) {
-                piece_moves = generate_moves(p.location);
+                piece_moves = new List<Move>();
+                generate_moves(piece_moves, p.location);
                 if (piece_moves.Count > 0) {
                     is_check_mate = false;
                 }
             }
             moves.Add(piece_moves);
         }
+        return moves;
+    }
+
+    public static List<Move> generate_flat_moves_auto() {
+        return generate_flat_moves(player_to_move == PieceColor.WHITE ? white_pieces : black_pieces);
+    }
+
+    public static List<Move> generate_flat_moves(List<Piece> pieces) {
+        List<Move> moves = new List<Move>();
+        foreach (Piece p in pieces) {
+            if (p.active) {
+                generate_moves(moves, p.location);
+            }
+        }
+        is_check_mate = moves.Count == 0;
         return moves;
     }
 }

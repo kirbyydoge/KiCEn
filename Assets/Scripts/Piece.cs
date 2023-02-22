@@ -24,12 +24,12 @@ public class Piece {
         return ((int)color << 3) + ((int)type);
     }
 
-    public static List<Move> generate_pawn_moves(Piece piece, Coordinate begin) {
-        List<Move> moves = new List<Move>();
+    public static void generate_pawn_moves(List<Move> moves, Piece piece, Coordinate begin) {
         Coordinate end;
         Coordinate en_passant_cell;
         Piece target = null;
         Piece en_passant_target = null;
+        int start_move_count = moves.Count;
         switch (piece.color) {
             case PieceColor.WHITE:
                 // Move up
@@ -42,7 +42,7 @@ public class Piece {
                 if (piece.move_count == 0) {
                     end = new Coordinate(begin.rank + 2, begin.file);
                     target = ChessGame.get_piece(end);
-                    if (ChessGame.is_valid_cell(end) && target == null && moves.Count > 0) {
+                    if (ChessGame.is_valid_cell(end) && target == null && moves.Count > start_move_count) {
                         moves.Add(new Move(piece, target, begin, end));
                     }
                 }
@@ -86,7 +86,7 @@ public class Piece {
                 if (piece.move_count == 0) {
                     end = new Coordinate(begin.rank - 2, begin.file);
                     target = ChessGame.get_piece(end);
-                    if (ChessGame.is_valid_cell(end) && target == null && moves.Count > 0) {
+                    if (ChessGame.is_valid_cell(end) && target == null && moves.Count > start_move_count) {
                         moves.Add(new Move(piece, target, begin, end));
                     }
                 }
@@ -120,10 +120,9 @@ public class Piece {
                 }
                 break;
         }
-        return moves;
     }
 
-    public static List<Move> generate_knight_moves(Piece piece, Coordinate begin) {
+    public static void generate_knight_moves(List<Move> moves, Piece piece, Coordinate begin) {
         Coordinate[] candidates = {
             new Coordinate(begin.rank + 1, begin.file - 2),
             new Coordinate(begin.rank + 2, begin.file - 1),
@@ -134,7 +133,6 @@ public class Piece {
             new Coordinate(begin.rank - 1, begin.file + 2),
             new Coordinate(begin.rank - 2, begin.file + 1)
         };
-        List<Move> moves = new List<Move>();
         foreach (Coordinate end in candidates) {
             if (!ChessGame.is_valid_cell(end)) continue;
             Piece target = ChessGame.get_piece_unsafe(end);
@@ -142,11 +140,9 @@ public class Piece {
                 moves.Add(new Move(piece, target, begin, end));
             }
         }
-        return moves;
     }
 
-    public static List<Move> generate_bishop_moves(Piece piece, Coordinate begin) {
-        List<Move> moves = new List<Move>();
+    public static void generate_bishop_moves(List<Move> moves, Piece piece, Coordinate begin) {
         Coordinate[] diagonals = {
             new Coordinate(1, -1),
             new Coordinate(1, 1),
@@ -170,11 +166,9 @@ public class Piece {
                 }
             }
         }
-        return moves;
     }
 
-    public static List<Move> generate_rook_moves(Piece piece, Coordinate begin) {
-        List<Move> moves = new List<Move>();
+    public static void generate_rook_moves(List<Move> moves, Piece piece, Coordinate begin) {
         Coordinate[] diagonals = {
             new Coordinate(0, -1),
             new Coordinate(0, 1),
@@ -198,11 +192,9 @@ public class Piece {
                 }
             }
         }
-        return moves;
     }
 
-    public static List<Move> generate_queen_moves(Piece piece, Coordinate begin) {
-        List<Move> moves = new List<Move>();
+    public static void generate_queen_moves(List<Move> moves, Piece piece, Coordinate begin) {
         Coordinate[] offsets = {
             new Coordinate(0, -1),
             new Coordinate(0, 1),
@@ -230,11 +222,9 @@ public class Piece {
                 }
             }
         }
-        return moves;
     }
 
-    public static List<Move> generate_king_moves(Piece piece, Coordinate begin) {
-        List<Move> moves = new List<Move>();
+    public static void generate_king_moves(List<Move> moves, Piece piece, Coordinate begin) {
         Coordinate[] offsets = {
             new Coordinate(begin.rank, begin.file - 1),
             new Coordinate(begin.rank, begin.file + 1),
@@ -283,7 +273,6 @@ public class Piece {
                 }
             }
         }
-        return moves;
     }
 
     public static bool cell_under_attack(Coordinate cell, PieceColor color) {
