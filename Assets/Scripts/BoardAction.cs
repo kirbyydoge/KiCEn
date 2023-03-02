@@ -4,12 +4,18 @@ using UnityEngine;
 
 public class BoardAction : MonoBehaviour {
 
+    public enum AIType {
+        Random, NaiveTree, AlphaBetaTree
+    };
+
     enum ActionState { 
         EMPTY, MOVING, OPPONENT, GAME_OVER
-    }
+    };
 
     public Camera main_camera;
     public IChessAI opponent;
+    public AIType ai_type;
+    public int ai_search_depth = 5;
 
     private ActionState state;
     private Piece held_piece;
@@ -33,8 +39,17 @@ public class BoardAction : MonoBehaviour {
         held_renderer.enabled = false;
         available_moves = null;
         moves_valid = false;
-        //opponent = new RandomAI();
-        opponent = new NaiveTreeAI(4);
+        switch (ai_type) {
+            case AIType.Random:
+                opponent = new RandomAI();
+                break;
+            case AIType.NaiveTree:
+                opponent = new NaiveTreeAI(ai_search_depth);
+                break;
+            case AIType.AlphaBetaTree:
+                opponent = new AlphaBetaTreeAI(ai_search_depth);
+                break;
+        }
     }
 
     void Update() {
@@ -93,8 +108,11 @@ public class BoardAction : MonoBehaviour {
                 break;
             case ActionState.OPPONENT:
                 state = ActionState.EMPTY;
+                float start = Time.realtimeSinceStartup;
                 Move ai_move = opponent.play_turn();
+                float stop = Time.realtimeSinceStartup;
                 ChessGame.make_move(ai_move);
+                Debug.Log("AI Took: " + (stop - start) + " s.");
                 played_moves.Add(ai_move);
                 moves_valid = false;
                 board_renderer.render_pieces();

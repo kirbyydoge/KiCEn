@@ -2,26 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NaiveTreeAI : IChessAI {
+public class AlphaBetaTreeAI : IChessAI {
     private int depth;
     private const int NEGATIVE_INF = -999999999; // int.MinValue overflows
-    private const int POSITIVE_INF =  999999999;
+    private const int POSITIVE_INF = 999999999;
 
-    public NaiveTreeAI(int depth) {
+    public AlphaBetaTreeAI(int depth) {
         this.depth = depth;
     }
 
     public Move play_turn() {
-        return naive_tree_search(depth);
+        return alpha_beta_tree_search(depth);
     }
 
-    private Move naive_tree_search(int depth) {
+    private Move alpha_beta_tree_search(int depth) {
         List<Move> all_moves = ChessGame.generate_flat_moves_auto();
         int max_score = NEGATIVE_INF;
         Move max_move = all_moves[0];
         foreach (Move m in all_moves) {
             ChessGame.make_move(m);
-            int cur_score = naive_tree_search_aux(depth - 1, false);
+            int cur_score = alpha_beta_tree_search_aux(depth - 1, NEGATIVE_INF, POSITIVE_INF, false);
             ChessGame.unmake_move(m);
             if (cur_score > max_score) {
                 max_score = cur_score;
@@ -31,7 +31,7 @@ public class NaiveTreeAI : IChessAI {
         return max_move;
     }
 
-    private int naive_tree_search_aux(int depth, bool maximizing_player) {
+    private int alpha_beta_tree_search_aux(int depth, int alpha, int beta, bool maximizing_player) {
         if (depth == 0) {
             return evaluate_board();
         }
@@ -44,8 +44,12 @@ public class NaiveTreeAI : IChessAI {
             value = NEGATIVE_INF;
             foreach (Move m in all_moves) {
                 ChessGame.make_move(m);
-                value = Mathf.Max(value, naive_tree_search_aux(depth - 1, false));
+                value = Mathf.Max(value, alpha_beta_tree_search_aux(depth - 1, alpha, beta, false));
                 ChessGame.unmake_move(m);
+                if (value > beta) {
+                    break;
+                }
+                alpha = Mathf.Max(alpha, value);
             }
         }
         else {
@@ -55,8 +59,12 @@ public class NaiveTreeAI : IChessAI {
             value = POSITIVE_INF;
             foreach (Move m in all_moves) {
                 ChessGame.make_move(m);
-                value = Mathf.Min(value, naive_tree_search_aux(depth - 1, true));
+                value = Mathf.Min(value, alpha_beta_tree_search_aux(depth - 1, alpha, beta, true));
                 ChessGame.unmake_move(m);
+                if (value < alpha) {
+                    break;
+                }
+                beta = Mathf.Min(beta, value);
             }
         }
         return value;
@@ -84,7 +92,7 @@ public class NaiveTreeAI : IChessAI {
     }
 
     // TODO: Convert to map? Generalize? IDK
-    public int piece_score(Piece p) { 
+    public int piece_score(Piece p) {
         switch (p.type) {
             case PieceType.PAWN: return 100;
             case PieceType.KING: return 99999; // Needs to be arbitrarily large
