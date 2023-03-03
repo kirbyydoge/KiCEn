@@ -4,20 +4,27 @@ using UnityEngine;
 
 public class NaiveTreeAI : IChessAI {
     private int depth;
-    private const int NEGATIVE_INF = -999999999; // int.MinValue overflows
-    private const int POSITIVE_INF =  999999999;
+    private const int NEGATIVE_INF = -9999999; // int.MinValue overflows
+    private const int POSITIVE_INF =  9999999;
+    private int evaluated_moves;
 
     public NaiveTreeAI(int depth) {
         this.depth = depth;
     }
 
     public Move play_turn() {
+        evaluated_moves = 0;
         return naive_tree_search(depth);
+    }
+
+    public int get_evaluated_moves() {
+        return evaluated_moves;
     }
 
     private Move naive_tree_search(int depth) {
         List<Move> all_moves = ChessGame.generate_flat_moves_auto();
-        int max_score = NEGATIVE_INF;
+        evaluated_moves = all_moves.Count;
+        int max_score = NEGATIVE_INF - depth;
         Move max_move = all_moves[0];
         foreach (Move m in all_moves) {
             ChessGame.make_move(m);
@@ -36,12 +43,10 @@ public class NaiveTreeAI : IChessAI {
             return evaluate_board();
         }
         List<Move> all_moves = ChessGame.generate_flat_moves_auto();
+        evaluated_moves += all_moves.Count;
         int value;
         if (maximizing_player) {
-            if (all_moves.Count == 0) {
-                return NEGATIVE_INF;
-            }
-            value = NEGATIVE_INF;
+            value = NEGATIVE_INF - depth;
             foreach (Move m in all_moves) {
                 ChessGame.make_move(m);
                 value = Mathf.Max(value, naive_tree_search_aux(depth - 1, false));
@@ -49,10 +54,7 @@ public class NaiveTreeAI : IChessAI {
             }
         }
         else {
-            if (all_moves.Count == 0) {
-                return POSITIVE_INF;
-            }
-            value = POSITIVE_INF;
+            value = POSITIVE_INF + depth;
             foreach (Move m in all_moves) {
                 ChessGame.make_move(m);
                 value = Mathf.Min(value, naive_tree_search_aux(depth - 1, true));
@@ -68,7 +70,7 @@ public class NaiveTreeAI : IChessAI {
         int white_mul = ChessGame.player_to_move == PieceColor.WHITE ? 1 : -1;
         int black_mul = -white_mul;
         if (ChessGame.is_check_mate) {
-            return black_mul * int.MaxValue;
+            return black_mul * POSITIVE_INF;
         }
         foreach (Piece p in ChessGame.white_pieces) {
             if (p.active) {

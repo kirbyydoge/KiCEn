@@ -55,7 +55,8 @@ public class Piece {
                 // En Passant
                 en_passant_cell = new Coordinate(begin.rank, begin.file + 1);
                 en_passant_target = ChessGame.get_piece(en_passant_cell);
-                if (en_passant_target != null && en_passant_target.type == PieceType.PAWN
+                if (begin.rank == 4
+                    && en_passant_target != null && en_passant_target.type == PieceType.PAWN
                     && en_passant_target.first_move == ChessGame.turn - 1
                     && en_passant_target.color != piece.color) {
                     moves.Add(new Move(piece, en_passant_target, begin, end, true, 0));
@@ -69,7 +70,8 @@ public class Piece {
                 // En Passant
                 en_passant_cell = new Coordinate(begin.rank, begin.file - 1);
                 en_passant_target = ChessGame.get_piece(en_passant_cell);
-                if (en_passant_target != null && en_passant_target.type == PieceType.PAWN
+                if (begin.rank == 4
+                    && en_passant_target != null && en_passant_target.type == PieceType.PAWN
                     && en_passant_target.first_move == ChessGame.turn - 1
                     && en_passant_target.color != piece.color) {
                     moves.Add(new Move(piece, en_passant_target, begin, end, true, 0));
@@ -99,7 +101,8 @@ public class Piece {
                 // En Passant
                 en_passant_cell = new Coordinate(begin.rank, begin.file + 1);
                 en_passant_target = ChessGame.get_piece(en_passant_cell);
-                if (en_passant_target != null && en_passant_target.type == PieceType.PAWN
+                if (begin.rank == 3
+                    && en_passant_target != null && en_passant_target.type == PieceType.PAWN
                     && en_passant_target.first_move == ChessGame.turn - 1
                     && en_passant_target.color != piece.color) {
                     moves.Add(new Move(piece, en_passant_target, begin, end, true, 0));
@@ -113,7 +116,8 @@ public class Piece {
                 // En Passant
                 en_passant_cell = new Coordinate(begin.rank, begin.file - 1);
                 en_passant_target = ChessGame.get_piece(en_passant_cell);
-                if (en_passant_target != null && en_passant_target.type == PieceType.PAWN
+                if (begin.rank == 3 
+                    && en_passant_target != null && en_passant_target.type == PieceType.PAWN
                     && en_passant_target.first_move == ChessGame.turn - 1
                     && en_passant_target.color != piece.color) {
                     moves.Add(new Move(piece, en_passant_target, begin, end, true, 0));
@@ -260,7 +264,7 @@ public class Piece {
                 }
                 Piece target = ChessGame.get_piece_unsafe(end);
                 if (target != null) {
-                    if (target.type == PieceType.ROOK && target.color == piece.color && target.move_count == 0) {
+                    if (target.type == PieceType.ROOK && target.color == piece.color && target.first_move < 0) {
                         end.file = begin.file + 2 * dir.file;
                         moves.Add(new Move(piece, target, begin, end, false, dir.file));
                     }

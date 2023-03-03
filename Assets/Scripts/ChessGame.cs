@@ -67,7 +67,11 @@ public static class ChessGame {
                 board[i, j] = null;
             }
         }
-        load_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        load_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"); // Start pos
+        //load_fen("4RQ2/1B6/8/B2pb3/2Pk2p1/6P1/4P3/3K4 w - - 0 1");
+        //load_fen("7n/3N1Np1/4k3/6Bp/2K5/5p2/Q7/4n3 w - - 0 1");
+        //load_fen("3r1rk1/pp4bp/6p1/q3p2P/4n3/2N1B3/PPP1QPP1/R3K2R b - - 0 1");
+        //load_fen("r3k1r1/pp2np2/4p2Q/3pP2p/5P2/3B3P/Pq4P1/R4R1K w q - 0 22");
     }
 
     public static void load_fen(string FEN) {
@@ -76,6 +80,8 @@ public static class ChessGame {
         string[] parts = FEN.Split(' ');
         string position = parts[0];
         string to_play = parts[1];
+        string castling = parts[2];
+        string en_passant = parts[3];
         for (int i = 0; i < position.Length; i++) {
             char cmd = position[i];
             Piece piece = null;
@@ -98,20 +104,80 @@ public static class ChessGame {
 
             if (piece != null) {
                 piece.location = new Coordinate(row, col);
-                piece.first_move = int.MinValue;
+                piece.first_move = piece.type == PieceType.ROOK ? 0 : int.MinValue;
+                piece.move_count = 0;
                 board[row, col++] = piece;
+                if (piece.type == PieceType.PAWN && (row != 1 && row != 6)) {
+                    piece.move_count = 1;
+                }
                 if (piece.color == PieceColor.WHITE) {
-                    piece.lookup_index = white_pieces.Count;
                     white_pieces.Add(piece);
                 }
                 else {
-                    piece.lookup_index = black_pieces.Count;
                     black_pieces.Add(piece);
                 }
             }
         }
+
         if (to_play[0] == 'w') player_to_move = PieceColor.WHITE;
         else player_to_move = PieceColor.BLACK;
+
+        for (int i = 0; i < castling.Length; i++) {
+            switch (castling[i]) {
+                case 'K':
+                    board[0, 7].first_move = int.MinValue;
+                    break;
+                case 'Q':
+                    board[0, 0].first_move = int.MinValue;
+                    break;
+                case 'k':
+                    board[7, 7].first_move = int.MinValue;
+                    break;
+                case 'q':
+                    board[7, 0].first_move = int.MinValue;
+                    break;
+            }
+        }
+
+        if (en_passant[0] != '-') {
+            int ep_col = en_passant[0] - 'a';
+            int ep_row = en_passant[1] - '1' == 5 ? 4 : 3;
+            Debug.Log(en_passant);
+            Debug.Log(ep_row + " " + ep_col);
+            board[ep_row, ep_col].first_move = turn - 1;
+        }
+
+        white_pieces.Sort((a, b) => {
+            Dictionary<PieceType, int> values = new Dictionary<PieceType, int>() {
+                { PieceType.PAWN, 100 },
+                { PieceType.KNIGHT, 300 },
+                { PieceType.BISHOP, 350 },
+                { PieceType.ROOK, 500 },
+                { PieceType.QUEEN, 900 },
+                { PieceType.KING, 1000 }
+            };
+            return values[a.type].CompareTo(values[b.type]);
+        });
+        
+        black_pieces.Sort((a, b) => {
+            Dictionary<PieceType, int> values = new Dictionary<PieceType, int>() {
+                { PieceType.PAWN, 100 },
+                { PieceType.KNIGHT, 300 },
+                { PieceType.BISHOP, 350 },
+                { PieceType.ROOK, 500 },
+                { PieceType.QUEEN, 900 },
+                { PieceType.KING, 1000 }
+            };
+            return values[a.type].CompareTo(values[b.type]);
+        });
+
+        for (int i = 0; i < white_pieces.Count; i++) {
+            white_pieces[i].lookup_index = i;
+        }
+
+        for (int i = 0; i < black_pieces.Count; i++) {
+            black_pieces[i].lookup_index = i;
+        }
     }
 
     public static bool is_valid_cell(Coordinate cell) {

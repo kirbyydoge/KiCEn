@@ -4,4 +4,5 @@ using UnityEngine;
 
 public interface IChessAI {
     public Move play_turn();
+    public int get_evaluated_moves();
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 public class BoardAction : MonoBehaviour {
 
     public enum AIType {
-        Random, NaiveTree, AlphaBetaTree
+        Human, Random, NaiveTree, AlphaBetaTree
     };
 
     enum ActionState { 
@@ -13,10 +13,14 @@ public class BoardAction : MonoBehaviour {
     };
 
     public Camera main_camera;
-    public IChessAI opponent;
-    public AIType ai_type;
-    public int ai_search_depth = 5;
+    public AIType p1_ai_type;
+    public int p1_search_depth = 5;
+    public AIType p2_ai_type;
+    public int p2_search_depth = 5;
 
+    private IChessAI p1_ai;
+    private IChessAI p2_ai;
+    private bool p1_turn;
     private ActionState state;
     private Piece held_piece;
     private Coordinate begin;
@@ -27,10 +31,11 @@ public class BoardAction : MonoBehaviour {
     private List<Move> played_moves;
     private bool moves_valid;
     private List<List<Move>> all_moves;
+    private bool notify_flag;
 
     void Start() {
         played_moves = new List<Move>();
-        state = ActionState.EMPTY;
+        state = p1_ai_type == AIType.Human ? ActionState.EMPTY : ActionState.OPPONENT;
         begin.rank = -1;
         begin.file = -1;
         board_renderer = gameObject.GetComponent<BoardRenderer>();
@@ -39,32 +44,50 @@ public class BoardAction : MonoBehaviour {
         held_renderer.enabled = false;
         available_moves = null;
         moves_valid = false;
-        switch (ai_type) {
+        switch (p1_ai_type) {
             case AIType.Random:
-                opponent = new RandomAI();
+                p1_ai = new RandomAI();
                 break;
             case AIType.NaiveTree:
-                opponent = new NaiveTreeAI(ai_search_depth);
+                p1_ai = new NaiveTreeAI(p1_search_depth);
                 break;
             case AIType.AlphaBetaTree:
-                opponent = new AlphaBetaTreeAI(ai_search_depth);
+                p1_ai = new AlphaBetaTreeAI(p1_search_depth);
                 break;
         }
+        switch (p2_ai_type) {
+            case AIType.Random:
+                p2_ai = new RandomAI();
+                break;
+            case AIType.NaiveTree:
+                p2_ai = new NaiveTreeAI(p2_search_depth);
+                break;
+            case AIType.AlphaBetaTree:
+                p2_ai = new AlphaBetaTreeAI(p2_search_depth);
+                break;
+        }
+        notify_flag = true;
+        p1_turn = true;
     }
 
     void Update() {
         Vector3 mouse_pos = Input.mousePosition;
         Vector3 world_pos = main_camera.ScreenToWorldPoint(mouse_pos);
+        AIType next_ai = p1_turn ? p2_ai_type : p1_ai_type;
+        IChessAI cur_ai = p1_turn ? p1_ai : p2_ai;
         world_pos.z = 0;
         if (ChessGame.is_check_mate) {
             state = ActionState.GAME_OVER;
+            if (notify_flag) {
+                notify_flag = false;
+                Debug.Log("Check mate!");
+            } 
         }
         switch (state) {
             case ActionState.EMPTY:
                 if (!moves_valid) {
                     all_moves = ChessGame.generate_all_moves_auto();
                     moves_valid = true;
-                    if (ChessGame.is_check_mate) Debug.Log("Check mate!");
                 }
                 if (Input.GetKeyDown(KeyCode.R)) {
                     if (played_moves.Count > 0) {
@@ -96,7 +119,8 @@ public class BoardAction : MonoBehaviour {
                     end = screen_to_board_coordinate(world_pos);
                     int selected_move = select_move(available_moves, end);
                     if (selected_move >= 0) {
-                        state = ActionState.OPPONENT;
+                        state = next_ai == AIType.Human ? ActionState.EMPTY : ActionState.OPPONENT;
+                        p1_turn = !p1_turn;
                         ChessGame.make_move(available_moves[selected_move]);
                         played_moves.Add(available_moves[selected_move]);
                         moves_valid = false;
@@ -107,18 +131,20 @@ public class BoardAction : MonoBehaviour {
                 }
                 break;
             case ActionState.OPPONENT:
-                state = ActionState.EMPTY;
+                state = next_ai == AIType.Human ? ActionState.EMPTY : ActionState.OPPONENT;
                 float start = Time.realtimeSinceStartup;
-                Move ai_move = opponent.play_turn();
+                Move ai_move = cur_ai.play_turn();
                 float stop = Time.realtimeSinceStartup;
                 ChessGame.make_move(ai_move);
-                Debug.Log("AI Took: " + (stop - start) + " s.");
+                Debug.Log("Evaluated " + cur_ai.get_evaluated_moves() + " positions in " + (stop - start) + " s.");
                 played_moves.Add(ai_move);
                 moves_valid = false;
                 board_renderer.render_pieces();
+                p1_turn = !p1_turn;
                 break;
             case ActionState.GAME_OVER:
                 if (Input.GetKeyDown(KeyCode.R)) {
+                    notify_flag = true;
                     if (played_moves.Count > 0) {
                         state = ActionState.EMPTY;
                         ChessGame.unmake_move(played_moves[played_moves.Count - 1]);

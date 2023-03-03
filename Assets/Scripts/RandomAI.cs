@@ -13,4 +13,8 @@ public class RandomAI : IChessAI {
         } while (piece_moves == null || piece_moves.Count == 0);
         return piece_moves[Random.Range(0, piece_moves.Count)];
     }
+
+    public int get_evaluated_moves() {
+        return 1;
+    }
 }
