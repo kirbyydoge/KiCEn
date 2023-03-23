@@ -104,8 +104,8 @@ public static class ChessGame {
 
             if (piece != null) {
                 piece.location = new Coordinate(row, col);
-                piece.first_move = piece.type == PieceType.ROOK ? 0 : int.MinValue;
-                piece.move_count = 0;
+                piece.first_move = piece.type == PieceType.ROOK ? 0 : -1;
+                piece.move_count = piece.type == PieceType.ROOK ? 1 : 0;
                 board[row, col++] = piece;
                 if (piece.type == PieceType.PAWN && (row != 1 && row != 6)) {
                     piece.move_count = 1;
@@ -125,16 +125,20 @@ public static class ChessGame {
         for (int i = 0; i < castling.Length; i++) {
             switch (castling[i]) {
                 case 'K':
-                    board[0, 7].first_move = int.MinValue;
+                    board[0, 7].first_move = -1;
+                    board[0, 7].move_count = 0;
                     break;
                 case 'Q':
-                    board[0, 0].first_move = int.MinValue;
+                    board[0, 0].first_move = -1;
+                    board[0, 0].move_count = 0;
                     break;
                 case 'k':
-                    board[7, 7].first_move = int.MinValue;
+                    board[7, 7].first_move = -1;
+                    board[7, 7].move_count = 0;
                     break;
                 case 'q':
-                    board[7, 0].first_move = int.MinValue;
+                    board[7, 0].first_move = -1;
+                    board[7, 0].move_count = 0;
                     break;
             }
         }
@@ -142,8 +146,6 @@ public static class ChessGame {
         if (en_passant[0] != '-') {
             int ep_col = en_passant[0] - 'a';
             int ep_row = en_passant[1] - '1' == 5 ? 4 : 3;
-            Debug.Log(en_passant);
-            Debug.Log(ep_row + " " + ep_col);
             board[ep_row, ep_col].first_move = turn - 1;
         }
 
@@ -227,7 +229,7 @@ public static class ChessGame {
         }
         
         player_to_move = player_to_move == PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE;
-
+        
         if (move.held.move_count == 0) { 
             move.held.first_move = turn;
         }

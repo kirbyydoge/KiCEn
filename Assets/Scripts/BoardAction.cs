@@ -5,11 +5,11 @@ using UnityEngine;
 public class BoardAction : MonoBehaviour {
 
     public enum AIType {
-        Human, Random, NaiveTree, AlphaBetaTree
+        Human, Random, NaiveTree, AlphaBetaTree, AlphaBossAI
     };
 
     enum ActionState { 
-        EMPTY, MOVING, OPPONENT, GAME_OVER
+        START, EMPTY, MOVING, OPPONENT, GAME_OVER
     };
 
     public Camera main_camera;
@@ -32,10 +32,12 @@ public class BoardAction : MonoBehaviour {
     private bool moves_valid;
     private List<List<Move>> all_moves;
     private bool notify_flag;
+    private float start_timer;
 
     void Start() {
         played_moves = new List<Move>();
-        state = p1_ai_type == AIType.Human ? ActionState.EMPTY : ActionState.OPPONENT;
+        start_timer = 0.0f;
+        state = ActionState.START;
         begin.rank = -1;
         begin.file = -1;
         board_renderer = gameObject.GetComponent<BoardRenderer>();
@@ -54,6 +56,9 @@ public class BoardAction : MonoBehaviour {
             case AIType.AlphaBetaTree:
                 p1_ai = new AlphaBetaTreeAI(p1_search_depth);
                 break;
+            case AIType.AlphaBossAI:
+                p1_ai = new AlphaBossAI(p1_search_depth);
+                break;
         }
         switch (p2_ai_type) {
             case AIType.Random:
@@ -64,6 +69,9 @@ public class BoardAction : MonoBehaviour {
                 break;
             case AIType.AlphaBetaTree:
                 p2_ai = new AlphaBetaTreeAI(p2_search_depth);
+                break;
+            case AIType.AlphaBossAI:
+                p2_ai = new AlphaBossAI(p1_search_depth);
                 break;
         }
         notify_flag = true;
@@ -76,19 +84,25 @@ public class BoardAction : MonoBehaviour {
         AIType next_ai = p1_turn ? p2_ai_type : p1_ai_type;
         IChessAI cur_ai = p1_turn ? p1_ai : p2_ai;
         world_pos.z = 0;
+        if (!moves_valid) {
+            all_moves = ChessGame.generate_all_moves_auto();
+            moves_valid = true;
+        }
         if (ChessGame.is_check_mate) {
             state = ActionState.GAME_OVER;
             if (notify_flag) {
                 notify_flag = false;
                 Debug.Log("Check mate!");
-            } 
+            }
         }
         switch (state) {
-            case ActionState.EMPTY:
-                if (!moves_valid) {
-                    all_moves = ChessGame.generate_all_moves_auto();
-                    moves_valid = true;
+            case ActionState.START:
+                start_timer += Time.deltaTime;
+                if (start_timer > 0.1) {
+                    state = p1_ai_type == AIType.Human ? ActionState.EMPTY : ActionState.OPPONENT;
                 }
+                break;
+            case ActionState.EMPTY:
                 if (Input.GetKeyDown(KeyCode.R)) {
                     if (played_moves.Count > 0) {
                         ChessGame.unmake_move(played_moves[played_moves.Count - 1]);

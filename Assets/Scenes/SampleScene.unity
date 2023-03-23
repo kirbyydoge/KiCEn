@@ -293,5 +293,5 @@ MonoBehaviour:
   main_camera: {fileID: 519420031}
   p1_ai_type: 0
   p1_search_depth: 4
-  p2_ai_type: 3
-  p2_search_depth: 5
+  p2_ai_type: 4
+  p2_search_depth: 4

@@ -230,12 +230,12 @@ public class Piece {
 
     public static void generate_king_moves(List<Move> moves, Piece piece, Coordinate begin) {
         Coordinate[] offsets = {
-            new Coordinate(begin.rank, begin.file - 1),
             new Coordinate(begin.rank, begin.file + 1),
+            new Coordinate(begin.rank, begin.file - 1),
             new Coordinate(begin.rank + 1, begin.file),
-            new Coordinate(begin.rank - 1, begin.file),
-            new Coordinate(begin.rank + 1, begin.file - 1),
             new Coordinate(begin.rank + 1, begin.file + 1),
+            new Coordinate(begin.rank + 1, begin.file - 1),
+            new Coordinate(begin.rank - 1, begin.file),
             new Coordinate(begin.rank - 1, begin.file + 1),
             new Coordinate(begin.rank - 1, begin.file - 1)
         };
@@ -256,7 +256,7 @@ public class Piece {
             if (piece.first_move >= 0 || cell_under_attack(begin, piece.color)) {
                 break;
             }
-            Coordinate end = begin;  
+            Coordinate end = begin;
             for (int i = 0; i < 8; i++) {
                 end.file += dir.file;
                 if (!ChessGame.is_valid_cell(end)) {
@@ -268,9 +268,7 @@ public class Piece {
                         end.file = begin.file + 2 * dir.file;
                         moves.Add(new Move(piece, target, begin, end, false, dir.file));
                     }
-                    else {
-                        break;
-                    }
+                    break;
                 }
                 if (cell_under_attack(end, piece.color)) {
                     break;
