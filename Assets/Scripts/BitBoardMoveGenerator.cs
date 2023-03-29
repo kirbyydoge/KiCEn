@@ -129,6 +129,38 @@ public class BitBoardMoveGenerator {
         return attacks;
     }
 
+    private static ulong bit_diagonal_attack(int square) {
+        ulong attacks = 0UL;
+        int rank = square / 8;
+        int file = square % 8;
+        int[,] directions = {
+            {1, 1},
+            {1, -1},
+            {-1, 1},
+            {-1, -1}
+        };
+        for(int i = 0; i < directions.GetLength(0); i++) {
+            int r_idx = rank + directions[i, 0];
+            int f_idx = file + directions[i, 1];
+            while (r_idx <= 6 && f_idx <= 6 && r_idx >= 1 && f_idx >= 1) {
+                attacks |= 1UL << (r_idx * 8 + f_idx);
+                r_idx += directions[i, 0]; f_idx += directions[i, 1];
+            }
+        }
+        return attacks;
+    }
+
+    private static ulong bit_orthogonal_attack(int square) {
+        ulong attacks = 0UL;
+        int rank = square / 8;
+        int file = square % 8;
+        for (int f_idx = file + 1; f_idx <= 6; f_idx++) attacks |= 1UL << (rank * 8 + f_idx);
+        for (int f_idx = file - 1; f_idx >= 1; f_idx--) attacks |= 1UL << (rank * 8 + f_idx);
+        for (int r_idx = rank + 1; r_idx <= 6; r_idx++) attacks |= 1UL << (r_idx * 8 + file);
+        for (int r_idx = rank - 1; r_idx >= 1; r_idx--) attacks |= 1UL << (r_idx * 8 + file);
+        return attacks;
+    }
+
     private void init_pawn_attacks() {
         pawn_attack_lut = new ulong[2, 64];
         for (int i = 0; i < 64; i++) {
@@ -196,7 +228,9 @@ public class BitBoardMoveGenerator {
             //print_bitboard(move_gen.pawn_attack_lut[(int)BitColor.WHITE, i]);
             //print_bitboard(move_gen.pawn_attack_lut[(int)BitColor.BLACK, i]);
             //print_bitboard(move_gen.knight_attack_lut[i]);
-            print_bitboard(move_gen.king_attack_lut[i]);
+            //print_bitboard(move_gen.king_attack_lut[i]);
+            //print_bitboard(bit_diagonal_attack(i));
+            print_bitboard(bit_orthogonal_attack(i));
         }
         //print_bitboard(bit_knight_attack((int)BitSquare.g4));
     }
