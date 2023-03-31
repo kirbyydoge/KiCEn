@@ -76,6 +76,7 @@ public class BoardAction : MonoBehaviour {
         }
         notify_flag = true;
         p1_turn = true;
+        BitBoardMoveGenerator.test_init();
     }
 
     void Update() {
