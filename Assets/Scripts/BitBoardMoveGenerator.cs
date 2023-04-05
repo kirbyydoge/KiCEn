@@ -8,34 +8,140 @@ using System.Runtime.CompilerServices;
 // BitOperations.LeadingZeroCount
 // BitOperations.TrailingZeroCount
 
+// Upper case picese are white, lower case pieces are black
+public enum BitPiece {
+    P, N, B, R, Q, K, p, n, b, r, q, k, invalid
+};
+
+public enum BitColor {
+    WHITE, BLACK, ALL
+};
+
+public enum BitSquare {
+    a8, b8, c8, d8, e8, f8, g8, h8,
+    a7, b7, c7, d7, e7, f7, g7, h7,
+    a6, b6, c6, d6, e6, f6, g6, h6,
+    a5, b5, c5, d5, e5, f5, g5, h5,
+    a4, b4, c4, d4, e4, f4, g4, h4,
+    a3, b3, c3, d3, e3, f3, g3, h3,
+    a2, b2, c2, d2, e2, f2, g2, h2,
+    a1, b1, c1, d1, e1, f1, g1, h1, invalid
+};
+
+public enum BitCastling {
+    WK = 1, WQ = 2, BK = 4, BQ = 8
+};
+
 public class BitBoardMoveGenerator {
 
     private static readonly string EMPTY_POS = "8/8/8/8/8/8/8/8/8/8 - - -";
     private static readonly string START_POS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    private static readonly string EVAL_POS = "r3k2r/p11pqpb1/bn2pnp1/2pPN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq c6 0 1";
-    
-    // Upper case picese are white, lower case pieces are black
-    private enum BitPiece {
-        P, N, B, R, Q, K, p, n, b, r, q, k, invalid
+    private static readonly string EVAL_POS = "r3k2r/pP1pqpb1/bn2pnp1/2pPN3/1p2P3/2N2Q1p/PPPBqPPP/R3K2R w KQkq c6 0 1";
+   
+
+    public struct BoardState {
+        ulong bb_P;
+        ulong bb_N;
+        ulong bb_B;
+        ulong bb_R;
+        ulong bb_Q;
+        ulong bb_K;
+        ulong bb_p;
+        ulong bb_n;
+        ulong bb_b;
+        ulong bb_r;
+        ulong bb_q;
+        ulong bb_k;
+        ulong occ_w;
+        ulong occ_b;
+        ulong occ_a;
+        BitSquare en_passant_square;
+        BitColor side_to_move;
+        char castling_rights;
+
+        public BoardState(BitBoardMoveGenerator generator) {
+            bb_P = generator.bitboards[(int)BitPiece.P];
+            bb_N = generator.bitboards[(int)BitPiece.N];
+            bb_B = generator.bitboards[(int)BitPiece.B];
+            bb_R = generator.bitboards[(int)BitPiece.R];
+            bb_Q = generator.bitboards[(int)BitPiece.Q];
+            bb_K = generator.bitboards[(int)BitPiece.K];
+            bb_p = generator.bitboards[(int)BitPiece.p];
+            bb_n = generator.bitboards[(int)BitPiece.n];
+            bb_b = generator.bitboards[(int)BitPiece.b];
+            bb_r = generator.bitboards[(int)BitPiece.r];
+            bb_q = generator.bitboards[(int)BitPiece.q];
+            bb_k = generator.bitboards[(int)BitPiece.k];
+            occ_w = generator.occupancies[COL_WHITE];
+            occ_b = generator.occupancies[COL_BLACK];
+            occ_a = generator.occupancies[COL_ALL];
+            en_passant_square = generator.en_passant_square;
+            side_to_move = generator.side_to_move;
+            castling_rights = generator.castling_rights;
+        }
+
+        public void save_state(BitBoardMoveGenerator generator) {
+            bb_P = generator.bitboards[(int)BitPiece.P];
+            bb_N = generator.bitboards[(int)BitPiece.N];
+            bb_B = generator.bitboards[(int)BitPiece.B];
+            bb_R = generator.bitboards[(int)BitPiece.R];
+            bb_Q = generator.bitboards[(int)BitPiece.Q];
+            bb_K = generator.bitboards[(int)BitPiece.K];
+            bb_p = generator.bitboards[(int)BitPiece.p];
+            bb_n = generator.bitboards[(int)BitPiece.n];
+            bb_b = generator.bitboards[(int)BitPiece.b];
+            bb_r = generator.bitboards[(int)BitPiece.r];
+            bb_q = generator.bitboards[(int)BitPiece.q];
+            bb_k = generator.bitboards[(int)BitPiece.k];
+            occ_w = generator.occupancies[COL_WHITE];
+            occ_b = generator.occupancies[COL_BLACK];
+            occ_a = generator.occupancies[COL_ALL];
+            en_passant_square = generator.en_passant_square;
+            side_to_move = generator.side_to_move;
+            castling_rights = generator.castling_rights;
+        }
+
+        public void restore_state(BitBoardMoveGenerator generator) {
+            generator.bitboards[(int)BitPiece.P] = bb_P;
+            generator.bitboards[(int)BitPiece.N] = bb_N;
+            generator.bitboards[(int)BitPiece.B] = bb_B;
+            generator.bitboards[(int)BitPiece.R] = bb_R;
+            generator.bitboards[(int)BitPiece.Q] = bb_Q;
+            generator.bitboards[(int)BitPiece.K] = bb_K;
+            generator.bitboards[(int)BitPiece.p] = bb_p;
+            generator.bitboards[(int)BitPiece.n] = bb_n;
+            generator.bitboards[(int)BitPiece.b] = bb_b;
+            generator.bitboards[(int)BitPiece.r] = bb_r;
+            generator.bitboards[(int)BitPiece.q] = bb_q;
+            generator.bitboards[(int)BitPiece.k] = bb_k;
+            generator.occupancies[COL_WHITE] = occ_w;
+            generator.occupancies[COL_BLACK] = occ_b;
+            generator.occupancies[COL_ALL] = occ_a;
+            generator.en_passant_square = en_passant_square;
+            generator.side_to_move = side_to_move;
+            generator.castling_rights = castling_rights;
+        }
     };
 
-    public enum BitColor { 
-        WHITE, BLACK, ALL
-    };
-
-    public enum BitSquare {
-        a8, b8, c8, d8, e8, f8, g8, h8,
-        a7, b7, c7, d7, e7, f7, g7, h7,
-        a6, b6, c6, d6, e6, f6, g6, h6,
-        a5, b5, c5, d5, e5, f5, g5, h5,
-        a4, b4, c4, d4, e4, f4, g4, h4,
-        a3, b3, c3, d3, e3, f3, g3, h3,
-        a2, b2, c2, d2, e2, f2, g2, h2,
-        a1, b1, c1, d1, e1, f1, g1, h1, invalid
-    };
-
-    private enum BitCastling { 
-        WK = 1, WQ = 2, BK = 4, BQ = 8
+    public struct BitMove {
+        public int source;
+        public int target;
+        public int piece;
+        public int promoted;
+        public bool is_captures;
+        public bool is_double;
+        public bool is_en_passant;
+        public bool is_castle;
+        public BitMove(int move) {
+            source = get_source(move);
+            target = get_target(move);
+            piece = get_piece(move);
+            promoted = get_promoted(move);
+            is_captures = get_is_captures(move);
+            is_double = get_is_double(move);
+            is_en_passant = get_is_en_passant(move);
+            is_castle = get_is_castle(move);
+        }
     };
 
     // Used for pawns
@@ -47,9 +153,9 @@ public class BitBoardMoveGenerator {
     private const ulong not_ab_file = 18229723555195321596UL;
 
     // I hate this (int)Enum.element cast requirement bullshit of C#
-    private readonly int COL_WHITE = (int)BitColor.WHITE;
-    private readonly int COL_BLACK = (int)BitColor.BLACK;
-    private readonly int COL_ALL = (int)BitColor.ALL;
+    private static readonly int COL_WHITE = (int)BitColor.WHITE;
+    private static readonly int COL_BLACK = (int)BitColor.BLACK;
+    private static readonly int COL_ALL = (int)BitColor.ALL;
 
     // Lookup tables
     public ulong[,] pawn_attack_lut;
@@ -65,11 +171,11 @@ public class BitBoardMoveGenerator {
     public int[] diagonal_relevant_bits;
     public int[] orthogonal_relevant_bits;
 
-    private ulong[] bitboards;
-    private ulong[] occupancies;
-    private BitColor side_to_move;
-    private BitSquare en_passant_square;
-    private char castling_rights;
+    public ulong[] bitboards;
+    public ulong[] occupancies;
+    public BitSquare en_passant_square;
+    public char castling_rights;
+    public BitColor side_to_move;
 
     private static readonly int[] multiply_de_bruijn_bit_pos = new int[64] {
         0,  47,  1, 56, 48, 27,  2, 60,
@@ -80,6 +186,17 @@ public class BitBoardMoveGenerator {
         34, 51, 20, 43, 31, 22, 10, 45,
         25, 39, 14, 33, 19, 30,  9, 24,
         13, 18,  8, 12,  7,  6,  5, 63
+    };
+
+    private static readonly int[] castling_constants_lut = new int[64] {
+         7, 15, 15, 15,  3, 15, 15, 11,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        13, 15, 15, 15, 12, 15, 15, 14
     };
 
     // PCG Random Number Generator Declarations
@@ -103,6 +220,60 @@ public class BitBoardMoveGenerator {
     private static char get_piece_char(BitPiece piece) {
         string lookup = "PNBRQKpnbrqk";
         return lookup[(int)piece];
+    }
+
+    // bool alternative? Possible bottleneck needs profiling.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int encode_move(int source, int target, BitPiece piece, BitPiece promoted,
+                   bool is_capture, bool is_double, bool is_en_passant, bool is_castle) {
+        return (source) |
+               (target << 6) |
+               ((int)piece << 12) |
+               ((int)promoted << 16) |
+               ((is_capture ? 1 : 0) << 20) |
+               ((is_double ? 1 : 0) << 21) |
+               ((is_en_passant ? 1 : 0) << 22) |
+               ((is_castle ? 1 : 0) << 23);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int get_source(int move) {
+        return move & 0x3F;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int get_target(int move) {
+        return (move >> 6) & 0x3F;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int get_piece(int move) {
+        return (move >> 12) & 0xF;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int get_promoted(int move) {
+        return (move >> 16) & 0xF;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool get_is_captures(int move) {
+        return (move & 0x100000) > 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool get_is_double(int move) {
+        return (move & 0x200000) > 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool get_is_en_passant(int move) {
+        return (move & 0x400000) > 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool get_is_castle(int move) {
+        return (move & 0x800000) > 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -201,7 +372,7 @@ public class BitBoardMoveGenerator {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int pop_count(ulong number) {
+    public static int pop_count(ulong number) {
         const ulong m1 = 0x5555555555555555UL;
         const ulong m2 = 0x3333333333333333UL;
         const ulong m4 = 0x0f0f0f0f0f0f0f0fUL;
@@ -538,80 +709,334 @@ public class BitBoardMoveGenerator {
         Debug.Log(log);
     }
 
-    public void generate_moves(BitColor side) {
-        if (side == BitColor.WHITE) {
-            ulong bitboard = bitboards[(int)BitPiece.P];
-            while (bitboard > 0) {
-                int src = pop_lsb(ref bitboard);
-                int tgt = src - 8;
-                if (tgt >= 0 && !get_bit(occupancies[COL_ALL], tgt)) {
-                    if (src / 8 == 1) { // promote
-                        Debug.Log($"pawn promote src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
-                    }
-                    else {
-                        if (src / 8 == 6 && tgt >= 8 && !get_bit(occupancies[COL_ALL], tgt - 8)) {
-                            Debug.Log($"pawn double push src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt - 8)}");
-                        }
-                        Debug.Log($"pawn push src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
-                    }
+    private void generate_white_pawn_moves(List<int> moves) {
+        ulong bitboard = bitboards[(int)BitPiece.P];
+        while (bitboard > 0) {
+            int src = pop_lsb(ref bitboard);
+            int tgt = src - 8;
+            if (tgt >= 0 && !get_bit(occupancies[COL_ALL], tgt)) {
+                if (src / 8 == 1) { // promote
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.N, false, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.B, false, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.R, false, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.Q, false, false, false, false));
                 }
-                ulong attacks = pawn_attack_lut[COL_WHITE, src] & occupancies[COL_BLACK];
-                while (attacks > 0) {
-                    tgt = pop_lsb(ref attacks);
-                    if (src / 8 == 1) {
-                        Debug.Log($"pawn capture promote src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
+                else {
+                    if (src / 8 == 6 && tgt >= 8 && !get_bit(occupancies[COL_ALL], tgt - 8)) {
+                        moves.Add(encode_move(src, tgt - 8, BitPiece.P, BitPiece.invalid, false, true, false, false));
                     }
-                    else {
-                        Debug.Log($"pawn capture src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
-                    }
-                }
-                if (en_passant_square != BitSquare.invalid) {
-                    ulong is_en_passant = pawn_attack_lut[COL_WHITE, src] & (1UL << (int)en_passant_square);
-                    if (is_en_passant > 0) {
-                        int en_passant_tgt = get_lsb_index(is_en_passant);
-                        Debug.Log($"en passant src:{(BitSquare)(src)} tgt: {(BitSquare)(en_passant_tgt)}");
-                    }
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.invalid, false, false, false, false));
                 }
             }
+            ulong attacks = pawn_attack_lut[COL_WHITE, src] & occupancies[COL_BLACK];
+            while (attacks > 0) {
+                tgt = pop_lsb(ref attacks);
+                if (src / 8 == 1) {
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.N, true, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.B, true, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.R, true, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.Q, true, false, false, false));
+                }
+                else {
+                    moves.Add(encode_move(src, tgt, BitPiece.P, BitPiece.invalid, true, false, false, false));
+                }
+            }
+            if (en_passant_square != BitSquare.invalid) {
+                ulong is_en_passant = pawn_attack_lut[COL_WHITE, src] & (1UL << (int)en_passant_square);
+                if (is_en_passant > 0) {
+                    int en_passant_tgt = get_lsb_index(is_en_passant);
+                    moves.Add(encode_move(src, en_passant_tgt, BitPiece.P, BitPiece.invalid, true, false, true, false));
+                }
+            }
+        }
+    }
+
+    private void generate_black_pawn_moves(List<int> moves) {    
+        ulong bitboard = bitboards[(int)BitPiece.p];
+        while (bitboard > 0) {
+            int src = pop_lsb(ref bitboard);
+            int tgt = src + 8;
+            if (tgt <= 63 && !get_bit(occupancies[COL_ALL], tgt)) {
+                if (src / 8 == 6) { // promote
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.n, false, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.b, false, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.r, false, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.q, false, false, false, false));
+                }
+                else {
+                    if (src / 8 == 1 && tgt <= 55 && !get_bit(occupancies[COL_ALL], tgt + 8)) {
+                        moves.Add(encode_move(src, tgt + 8, BitPiece.p, BitPiece.invalid, false, true, false, false));
+                    }
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.invalid, false, false, false, false));
+                }
+            }
+            ulong attacks = pawn_attack_lut[COL_BLACK, src] & occupancies[COL_WHITE];
+            while (attacks > 0) {
+                tgt = pop_lsb(ref attacks);
+                if (src / 8 == 6) {
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.n, true, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.b, true, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.r, true, false, false, false));
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.q, true, false, false, false));
+                }
+                else {
+                    moves.Add(encode_move(src, tgt, BitPiece.p, BitPiece.invalid, true, false, false, false));
+                }
+            }
+            if (en_passant_square != BitSquare.invalid) {
+                ulong is_en_passant = pawn_attack_lut[COL_BLACK, src] & (1UL << (int)en_passant_square);
+                if (is_en_passant > 0) {
+                    int en_passant_tgt = get_lsb_index(is_en_passant);
+                    moves.Add(encode_move(src, en_passant_tgt, BitPiece.p, BitPiece.invalid, true, false, true, false));
+                }
+            }
+        }
+    }
+
+    private void generate_white_castling_moves(List<int> moves) {
+        if ((castling_rights & (char)BitCastling.WK) > 0) {
+            if (!get_bit(occupancies[COL_ALL], (int)BitSquare.f1)
+            && !get_bit(occupancies[COL_ALL], (int)BitSquare.g1)
+            && !is_square_attacked(BitSquare.f1, BitColor.BLACK)
+            && !is_square_attacked(BitSquare.g1, BitColor.BLACK)) {
+                moves.Add(encode_move((int)BitSquare.e1, (int)BitSquare.g1, BitPiece.K, BitPiece.invalid, false, false, false, true));
+            }
+        }
+        if ((castling_rights & (char)BitCastling.WQ) > 0) {
+            if (!get_bit(occupancies[COL_ALL], (int)BitSquare.b1)
+            && !get_bit(occupancies[COL_ALL], (int)BitSquare.c1)
+            && !get_bit(occupancies[COL_ALL], (int)BitSquare.d1)
+            && !is_square_attacked(BitSquare.b1, BitColor.BLACK)
+            && !is_square_attacked(BitSquare.c1, BitColor.BLACK)
+            && !is_square_attacked(BitSquare.d1, BitColor.BLACK)) {
+                moves.Add(encode_move((int)BitSquare.e1, (int)BitSquare.c1, BitPiece.K, BitPiece.invalid, false, false, false, true));
+            }
+        }
+    }
+
+    private void generate_black_castling_moves(List<int> moves) {
+        if ((castling_rights & (char)BitCastling.BK) > 0) {
+            if (!get_bit(occupancies[COL_ALL], (int)BitSquare.f8)
+            && !get_bit(occupancies[COL_ALL], (int)BitSquare.g8)
+            && !is_square_attacked(BitSquare.f8, BitColor.WHITE)
+            && !is_square_attacked(BitSquare.g8, BitColor.WHITE)) {
+                moves.Add(encode_move((int)BitSquare.e8, (int)BitSquare.g8, BitPiece.k, BitPiece.invalid, false, false, false, true));
+            }
+        }
+        if ((castling_rights & (char)BitCastling.BQ) > 0) {
+            if (!get_bit(occupancies[COL_ALL], (int)BitSquare.b8)
+            && !get_bit(occupancies[COL_ALL], (int)BitSquare.c8)
+            && !get_bit(occupancies[COL_ALL], (int)BitSquare.d8)
+            && !is_square_attacked(BitSquare.b8, BitColor.WHITE)
+            && !is_square_attacked(BitSquare.c8, BitColor.WHITE)
+            && !is_square_attacked(BitSquare.d8, BitColor.WHITE)) {
+                moves.Add(encode_move((int)BitSquare.e8, (int)BitSquare.c8, BitPiece.k, BitPiece.invalid, false, false, false, true));
+            }
+        }
+    }
+
+    private void generate_knight_moves(List<int> moves, int piece, int side) {
+        ulong bitboard = bitboards[piece];
+        while (bitboard > 0) {
+            int src = pop_lsb(ref bitboard);
+            ulong attacks = knight_attack_lut[src] & ~occupancies[side];
+            while (attacks > 0) {
+                int tgt = pop_lsb(ref attacks);
+                // Not inlining this if into the function, as we'll need to discard quite moves in the future.
+                if (get_bit(occupancies[1 - side], tgt)) {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, true, false, false, false));
+                }
+                else {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, false, false, false, false));
+                }
+            }
+        }
+    }
+
+    private void generate_bishop_moves(List<int> moves, int piece, int side) {
+        ulong bitboard = bitboards[piece];
+        while (bitboard > 0) {
+            int src = pop_lsb(ref bitboard);
+            ulong attacks = get_bishop_attacks(src, occupancies[COL_ALL]) & ~occupancies[side];
+            while (attacks > 0) {
+                int tgt = pop_lsb(ref attacks);
+                // Not inlining this if into the function, as we'll need to discard quite moves in the future.
+                if (get_bit(occupancies[1 - side], tgt)) {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, true, false, false, false));
+                }
+                else {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, false, false, false, false));
+                }
+            }
+        }
+    }
+
+    private void generate_rook_moves(List<int> moves, int piece, int side) {
+        ulong bitboard = bitboards[piece];
+        while (bitboard > 0) {
+            int src = pop_lsb(ref bitboard);
+            ulong attacks = get_rook_attacks(src, occupancies[COL_ALL]) & ~occupancies[side];
+            while (attacks > 0) {
+                int tgt = pop_lsb(ref attacks);
+                // Not inlining this if into the function, as we'll need to discard quite moves in the future.
+                if (get_bit(occupancies[1 - side], tgt)) {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, true, false, false, false));
+                }
+                else {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, false, false, false, false));
+                }
+            }
+        }
+    }
+
+    private void generate_queen_moves(List<int> moves, int piece, int side) {
+        ulong bitboard = bitboards[piece];
+        while (bitboard > 0) {
+            int src = pop_lsb(ref bitboard);
+            ulong attacks = get_queen_attacks(src, occupancies[COL_ALL]) & ~occupancies[side];
+            while (attacks > 0) {
+                int tgt = pop_lsb(ref attacks);
+                // Not inlining this if into the function, as we'll need to discard quite moves in the future.
+                if (get_bit(occupancies[1 - side], tgt)) {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, true, false, false, false));
+                }
+                else {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, false, false, false, false));
+                }
+            }
+        }
+    }
+
+    private void generate_king_moves(List<int> moves, int piece, int side) {
+        ulong bitboard = bitboards[piece];
+        while (bitboard > 0) {
+            int src = pop_lsb(ref bitboard);
+            ulong attacks = king_attack_lut[src] & ~occupancies[side];
+            while (attacks > 0) {
+                int tgt = pop_lsb(ref attacks);
+                // Not inlining this if into the function, as we'll need to discard quite moves in the future.
+                if (get_bit(occupancies[1 - side], tgt)) {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, true, false, false, false));
+                }
+                else {
+                    moves.Add(encode_move(src, tgt, (BitPiece)piece, BitPiece.invalid, false, false, false, false));
+                }
+            }
+        }
+    }
+
+    public bool make_move(int enc_move) {
+        BoardState state = new BoardState(this);
+        BitMove move = new BitMove(enc_move);
+
+        clear_bit(ref bitboards[move.piece], move.source);
+        set_bit(ref bitboards[move.piece], move.target);
+
+        if (move.is_captures) {
+            int offset = (1-(int)side_to_move) * (int)BitPiece.p;
+            for (int i = (int)BitPiece.P; i <= (int)BitPiece.K; i++) {
+                if (get_bit(bitboards[i + offset], move.target)) {
+                    clear_bit(ref bitboards[i + offset], move.target);
+                    break;
+                }
+            }
+        }
+
+        if ((BitPiece)move.promoted != BitPiece.invalid) {
+            clear_bit(ref bitboards[move.piece], move.target);
+            set_bit(ref bitboards[move.promoted], move.target);
+        }
+
+        if (move.is_en_passant) {
+            int bit_idx = (1 - (int)side_to_move) * (int)BitPiece.p;
+            int en_pass_idx = move.target + (8 - (int)side_to_move*16);
+            clear_bit(ref bitboards[bit_idx], move.target - en_pass_idx);
+        }
+
+        en_passant_square = BitSquare.invalid;
+
+        if (move.is_double) {
+            en_passant_square = (BitSquare)move.target + (8 - (int)side_to_move * 16);
+        }
+
+        if (move.is_castle) {
+            switch ((BitSquare)move.target) {
+                case BitSquare.g1:
+                    clear_bit(ref bitboards[(int)BitPiece.R], (int)BitSquare.h1);
+                    set_bit(ref bitboards[(int)BitPiece.R], (int)BitSquare.f1);
+                    break;
+                case BitSquare.c1:
+                    clear_bit(ref bitboards[(int)BitPiece.R], (int)BitSquare.a1);
+                    set_bit(ref bitboards[(int)BitPiece.R], (int)BitSquare.d1);
+                    break;
+                case BitSquare.g8:
+                    clear_bit(ref bitboards[(int)BitPiece.r], (int)BitSquare.h8);
+                    set_bit(ref bitboards[(int)BitPiece.r], (int)BitSquare.f8);
+                    break;
+                case BitSquare.c8:
+                    clear_bit(ref bitboards[(int)BitPiece.r], (int)BitSquare.a8);
+                    set_bit(ref bitboards[(int)BitPiece.r], (int)BitSquare.d8);
+                    break;
+            }
+        }
+
+        castling_rights &= (char)castling_constants_lut[move.source];
+        castling_rights &= (char)castling_constants_lut[move.target];
+
+        //TODO: Optimize.
+        occupancies[COL_WHITE] = 0UL;
+        occupancies[COL_BLACK] = 0UL;
+
+        for (int i = (int)BitPiece.P; i <= (int)BitPiece.K; i++) {
+            occupancies[COL_WHITE] |= bitboards[i];
+        }
+        for (int i = (int)BitPiece.p; i <= (int)BitPiece.k; i++) {
+            occupancies[COL_BLACK] |= bitboards[i];
+        }
+
+        occupancies[COL_ALL] = occupancies[COL_WHITE] | occupancies[COL_BLACK];
+
+        int king_idx = ((int)side_to_move) * (int)BitPiece.p + (int)BitPiece.K;
+        side_to_move = 1 - side_to_move;
+        if (is_square_attacked((BitSquare)get_lsb_index(bitboards[king_idx]), side_to_move)) {
+            state.restore_state(this);
+            return false;
+        }
+        return true;
+    }
+
+    public bool make_capture(int move) {
+        if (!get_is_captures(move)) {
+            return false;
+        }
+        return make_move(move);
+    }
+    
+    public List<int> generate_moves(BitColor side) {
+        List<int> moves = new List<int>(256);
+        // For the moves that require special care. We want to perform as
+        // many pre-compiled calculations as we can. Therefore, seperating
+        // the generation of moves and grouping them helps with the following:
+        // - Fewer branch misses. (AT MOST 1 misprediction for the side to generate)
+        // - Fewer cache misses. (Prefetcher should be able to follow the pattern for alternating sides)
+        // - Fewer on the fly instructions. (Hardcoded target squares and move directions, no lookup overhead)
+        int not_side = 1 - (int)side;
+        // The good old branchless computation hack I found, check is_square_attacked for explanation.
+        int offset = (int)side * (int)(BitPiece.p);
+        if (side == BitColor.WHITE) {
+            generate_white_pawn_moves(moves);
+            generate_white_castling_moves(moves);
         }
         else {
-            ulong bitboard = bitboards[(int)BitPiece.p];
-            while (bitboard > 0) {
-                int src = pop_lsb(ref bitboard);
-                int tgt = src + 8;
-                if (tgt <= 63 && !get_bit(occupancies[COL_ALL], tgt)) {
-                    if (src / 8 == 6) { // promote
-                        Debug.Log($"pawn promote src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
-                    }
-                    else {
-                        if (src / 8 == 1 && tgt <= 55 && !get_bit(occupancies[COL_ALL], tgt + 8)) {
-                            Debug.Log($"pawn double push src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt + 8)}");
-                        }
-                        Debug.Log($"pawn push src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
-                    }
-                }
-                ulong attacks = pawn_attack_lut[COL_BLACK, src] & occupancies[COL_WHITE];
-                while (attacks > 0) {
-                    tgt = pop_lsb(ref attacks);
-                    if (src / 8 == 6) {
-                        Debug.Log($"pawn capture promote src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
-                    }
-                    else {
-                        Debug.Log($"pawn capture src:{(BitSquare)(src)} tgt: {(BitSquare)(tgt)}");
-                    }
-                }
-                if (en_passant_square != BitSquare.invalid) {
-                    ulong is_en_passant = pawn_attack_lut[COL_BLACK, src] & (1UL << (int)en_passant_square);
-                    if (is_en_passant > 0) {
-                        int en_passant_tgt = get_lsb_index(is_en_passant);
-                        Debug.Log($"en passant src:{(BitSquare)(src)} tgt: {(BitSquare)(en_passant_tgt)}");
-                    }
-                }
-            }
+            generate_black_pawn_moves(moves);
+            generate_black_castling_moves(moves);
         }
-        for (BitPiece piece = BitPiece.P; piece < BitPiece.invalid; piece++) {
-            ulong bitboard = bitboards[(int)piece];
-        }
+        generate_knight_moves(moves, (int)BitPiece.N + offset, (int)side);
+        generate_bishop_moves(moves, (int)BitPiece.B + offset, (int)side);
+        generate_rook_moves(moves, (int)BitPiece.R + offset, (int)side);
+        generate_queen_moves(moves, (int)BitPiece.Q + offset, (int)side);
+        generate_king_moves(moves, (int)BitPiece.K + offset, (int)side);
+        return moves;
     }
 
     public static void print_bitboard(ulong bitboard) {
@@ -898,11 +1323,39 @@ public class BitBoardMoveGenerator {
     //    return null;
     //}
 
+    public static Move convert_move_to_legacy(int enc_move) {
+        BitMove move = new BitMove(enc_move);
+        Coordinate begin = new Coordinate(move.source / 8, move.source % 8);
+        Coordinate end = new Coordinate(move.target / 8, move.target % 8);
+        Piece held = ChessGame.get_piece(begin);
+        Piece target = ChessGame.get_piece(end);
+        if (move.is_en_passant) {
+            target = ChessGame.get_piece(new Coordinate(begin.rank, end.file));
+            return new Move(held, target, begin, end, true, 0);
+        }
+        else if (move.is_castle) {
+            int dir = move.target % 8 > 3 ? 1 : -1;
+            target = ChessGame.get_piece(new Coordinate(begin.rank, move.target % 8 > 3 ? 7 : 0));
+            return new Move(held, target, begin, end, false, dir);
+        }
+        else {
+            return new Move(held, target, begin, end);
+        }
+    }
+
     public static void test_init() {
         init_pcg(0, 0);
         BitBoardMoveGenerator move_gen = new BitBoardMoveGenerator();
         move_gen.load_fen(EVAL_POS);
+        List<int> moves = move_gen.generate_moves(BitColor.WHITE);
+        BoardState state = new BoardState(move_gen);
         move_gen.print_board();
-        move_gen.generate_moves(BitColor.WHITE);
+        for (int i = 0; i < moves.Count; i++) {
+            if (!move_gen.make_move(moves[i])) {
+                continue;
+            }
+            move_gen.print_board();
+            state.restore_state(move_gen);
+        }
     }
 }

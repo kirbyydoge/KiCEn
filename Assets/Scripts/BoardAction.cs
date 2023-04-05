@@ -5,7 +5,7 @@ using UnityEngine;
 public class BoardAction : MonoBehaviour {
 
     public enum AIType {
-        Human, Random, NaiveTree, AlphaBetaTree, AlphaBossAI
+        Human, Random, NaiveTree, AlphaBetaTree, AlphaBossAI, AlphaBetaBit
     };
 
     enum ActionState { 
@@ -17,6 +17,8 @@ public class BoardAction : MonoBehaviour {
     public int p1_search_depth = 5;
     public AIType p2_ai_type;
     public int p2_search_depth = 5;
+
+    public static BitBoardMoveGenerator generator;
 
     private IChessAI p1_ai;
     private IChessAI p2_ai;
@@ -59,6 +61,9 @@ public class BoardAction : MonoBehaviour {
             case AIType.AlphaBossAI:
                 p1_ai = new AlphaBossAI(p1_search_depth);
                 break;
+            case AIType.AlphaBetaBit:
+                p1_ai = new AlphaBetaBitAI(p1_search_depth);
+                break;
         }
         switch (p2_ai_type) {
             case AIType.Random:
@@ -71,12 +76,15 @@ public class BoardAction : MonoBehaviour {
                 p2_ai = new AlphaBetaTreeAI(p2_search_depth);
                 break;
             case AIType.AlphaBossAI:
-                p2_ai = new AlphaBossAI(p1_search_depth);
+                p2_ai = new AlphaBossAI(p2_search_depth);
+                break;
+            case AIType.AlphaBetaBit:
+                p2_ai = new AlphaBetaBitAI(p2_search_depth);
                 break;
         }
         notify_flag = true;
         p1_turn = true;
-        BitBoardMoveGenerator.test_init();
+        generator = new BitBoardMoveGenerator();
     }
 
     void Update() {
