@@ -42,28 +42,28 @@ public class BoardRenderer : MonoBehaviour {
     private SpriteRenderer[,] tile_renderers;
     private GameObject[,] pieces;
     private SpriteRenderer[,] piece_renderers;
-    private Dictionary<int, Sprite> piece_map;
+    private Sprite[] piece_map;
 
     void Start() {
         tiles = new GameObject[num_ranks, num_files];
         tile_renderers = new SpriteRenderer[num_ranks, num_files];
         pieces = new GameObject[num_ranks, num_files];
         piece_renderers = new SpriteRenderer[num_ranks, num_files];
-        piece_map = new Dictionary<int, Sprite>();
+        piece_map = new Sprite[(int)BitPiece.invalid];
+        
+        piece_map[(int)BitPiece.P] = sprite_white_pawn;
+        piece_map[(int)BitPiece.N] = sprite_white_knight;
+        piece_map[(int)BitPiece.B] = sprite_white_bishop;
+        piece_map[(int)BitPiece.R] = sprite_white_rook;
+        piece_map[(int)BitPiece.Q] = sprite_white_queen;
+        piece_map[(int)BitPiece.K] = sprite_white_king;
 
-        piece_map[Piece.get_hash(PieceColor.WHITE, PieceType.PAWN)] = sprite_white_pawn;
-        piece_map[Piece.get_hash(PieceColor.WHITE, PieceType.KNIGHT)] = sprite_white_knight;
-        piece_map[Piece.get_hash(PieceColor.WHITE, PieceType.BISHOP)] = sprite_white_bishop;
-        piece_map[Piece.get_hash(PieceColor.WHITE, PieceType.ROOK)] = sprite_white_rook;
-        piece_map[Piece.get_hash(PieceColor.WHITE, PieceType.QUEEN)] = sprite_white_queen;
-        piece_map[Piece.get_hash(PieceColor.WHITE, PieceType.KING)] = sprite_white_king;
-
-        piece_map[Piece.get_hash(PieceColor.BLACK, PieceType.PAWN)] = sprite_black_pawn;
-        piece_map[Piece.get_hash(PieceColor.BLACK, PieceType.KNIGHT)] = sprite_black_knight;
-        piece_map[Piece.get_hash(PieceColor.BLACK, PieceType.BISHOP)] = sprite_black_bishop;
-        piece_map[Piece.get_hash(PieceColor.BLACK, PieceType.ROOK)] = sprite_black_rook;
-        piece_map[Piece.get_hash(PieceColor.BLACK, PieceType.QUEEN)] = sprite_black_queen;
-        piece_map[Piece.get_hash(PieceColor.BLACK, PieceType.KING)] = sprite_black_king;
+        piece_map[(int)BitPiece.p] = sprite_black_pawn;
+        piece_map[(int)BitPiece.n] = sprite_black_knight;
+        piece_map[(int)BitPiece.b] = sprite_black_bishop;
+        piece_map[(int)BitPiece.r] = sprite_black_rook;
+        piece_map[(int)BitPiece.q] = sprite_black_queen;
+        piece_map[(int)BitPiece.k] = sprite_black_king;
 
         create_tiles();
         resize_tiles();
@@ -121,36 +121,48 @@ public class BoardRenderer : MonoBehaviour {
     }
 
     public void render_pieces() {
+        BitBoardMoveGenerator generator = ChessGame.generator;
         for (int rank = 0; rank < num_ranks; rank++) {
             for (int file = 0; file < num_files; file++) {
                 tile_renderers[rank, file].color = (rank + file) % 2 == 0 ? color_dark_square : color_white_square;
+                piece_renderers[rank, file].sprite = null;
             }
         }
-        for (int rank = 0; rank < num_ranks; rank++) {
-            for (int file = 0; file < num_files; file++) {
-                Piece piece = ChessGame.board[rank, file];
+        for (BitPiece piece = BitPiece.P; piece <= BitPiece.K; piece++) {
+            ulong bitboard = generator.bitboards[(int)piece];
+            while (bitboard > 0) {
+                int square = BitBoardMoveGenerator.pop_lsb(ref bitboard);
+                int rank = 7 - square / 8;
+                int file = square % 8;
                 piece_renderers[rank, file].transform.localScale = Vector3.one * piece_scale;
-                if (piece != null) {
-                    piece_renderers[rank, file].sprite = piece_map[piece.hash];
-                    piece_renderers[rank, file].color = piece.color == PieceColor.WHITE ? bg_white_piece : bg_dark_piece;
-                }
-                else {
-                    piece_renderers[rank, file].sprite = null;
-                }
+                piece_renderers[rank, file].sprite = piece_map[(int)piece];
+                piece_renderers[rank, file].color = bg_white_piece;
+            }
+        }
+        for (BitPiece piece = BitPiece.p; piece <= BitPiece.k; piece++) {
+            ulong bitboard = generator.bitboards[(int)piece];
+            while (bitboard > 0) {
+                int square = BitBoardMoveGenerator.pop_lsb(ref bitboard);
+                int rank = 7 - square / 8;
+                int file = square % 8;
+                piece_renderers[rank, file].transform.localScale = Vector3.one * piece_scale;
+                piece_renderers[rank, file].sprite = piece_map[(int)piece];
+                piece_renderers[rank, file].color = bg_dark_piece;
             }
         }
     }
 
-    public void render_moves(List<Move> moves) {
+    public void render_moves(List<int> moves) {
         if (moves == null) return;
         for (int i = 0; i < moves.Count; i++) {
-            Move move = moves[i];
-            if (move.target == null) {
-                piece_renderers[move.end.rank, move.end.file].sprite = sprite_move;
-                piece_renderers[move.end.rank, move.end.file].color = Color.white;
+            BitBoardMoveGenerator.BitMove move = new BitBoardMoveGenerator.BitMove(moves[i]);
+            Coordinate end = new Coordinate(7 - move.target / 8, move.target % 8);
+            if (move.is_captures) {
+                tile_renderers[end.rank, end.file].color = color_capture_square;
             }
             else {
-                tile_renderers[move.end.rank, move.end.file].color = color_capture_square;
+                piece_renderers[end.rank, end.file].sprite = sprite_move;
+                piece_renderers[end.rank, end.file].color = Color.white;
             }
         }
     }

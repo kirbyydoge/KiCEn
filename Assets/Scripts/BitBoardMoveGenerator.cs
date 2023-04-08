@@ -32,96 +32,70 @@ public enum BitCastling {
     WK = 1, WQ = 2, BK = 4, BQ = 8
 };
 
+public struct BoardState {
+    ulong bb_P;
+    ulong bb_N;
+    ulong bb_B;
+    ulong bb_R;
+    ulong bb_Q;
+    ulong bb_K;
+    ulong bb_p;
+    ulong bb_n;
+    ulong bb_b;
+    ulong bb_r;
+    ulong bb_q;
+    ulong bb_k;
+    ulong occ_w;
+    ulong occ_b;
+    ulong occ_a;
+    BitSquare en_passant_square;
+    BitColor side_to_move;
+    char castling_rights;
+
+    public BoardState(BitBoardMoveGenerator generator) {
+        bb_P = generator.bitboards[(int)BitPiece.P];
+        bb_N = generator.bitboards[(int)BitPiece.N];
+        bb_B = generator.bitboards[(int)BitPiece.B];
+        bb_R = generator.bitboards[(int)BitPiece.R];
+        bb_Q = generator.bitboards[(int)BitPiece.Q];
+        bb_K = generator.bitboards[(int)BitPiece.K];
+        bb_p = generator.bitboards[(int)BitPiece.p];
+        bb_n = generator.bitboards[(int)BitPiece.n];
+        bb_b = generator.bitboards[(int)BitPiece.b];
+        bb_r = generator.bitboards[(int)BitPiece.r];
+        bb_q = generator.bitboards[(int)BitPiece.q];
+        bb_k = generator.bitboards[(int)BitPiece.k];
+        occ_w = generator.occupancies[(int)BitColor.WHITE];
+        occ_b = generator.occupancies[(int)BitColor.BLACK];
+        occ_a = generator.occupancies[(int)BitColor.ALL];
+        en_passant_square = generator.en_passant_square;
+        side_to_move = generator.side_to_move;
+        castling_rights = generator.castling_rights;
+    }
+
+    public void restore_state(BitBoardMoveGenerator generator) {
+        generator.bitboards[(int)BitPiece.P] = bb_P;
+        generator.bitboards[(int)BitPiece.N] = bb_N;
+        generator.bitboards[(int)BitPiece.B] = bb_B;
+        generator.bitboards[(int)BitPiece.R] = bb_R;
+        generator.bitboards[(int)BitPiece.Q] = bb_Q;
+        generator.bitboards[(int)BitPiece.K] = bb_K;
+        generator.bitboards[(int)BitPiece.p] = bb_p;
+        generator.bitboards[(int)BitPiece.n] = bb_n;
+        generator.bitboards[(int)BitPiece.b] = bb_b;
+        generator.bitboards[(int)BitPiece.r] = bb_r;
+        generator.bitboards[(int)BitPiece.q] = bb_q;
+        generator.bitboards[(int)BitPiece.k] = bb_k;
+        generator.occupancies[(int)BitColor.WHITE] = occ_w;
+        generator.occupancies[(int)BitColor.BLACK] = occ_b;
+        generator.occupancies[(int)BitColor.ALL] = occ_a;
+        generator.en_passant_square = en_passant_square;
+        generator.side_to_move = side_to_move;
+        generator.castling_rights = castling_rights;
+    }
+};
+
 public class BitBoardMoveGenerator {
-
-    private static readonly string EMPTY_POS = "8/8/8/8/8/8/8/8/8/8 - - -";
-    private static readonly string START_POS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    private static readonly string EVAL_POS = "r3k2r/pP1pqpb1/bn2pnp1/2pPN3/1p2P3/2N2Q1p/PPPBqPPP/R3K2R w KQkq c6 0 1";
-   
-
-    public struct BoardState {
-        ulong bb_P;
-        ulong bb_N;
-        ulong bb_B;
-        ulong bb_R;
-        ulong bb_Q;
-        ulong bb_K;
-        ulong bb_p;
-        ulong bb_n;
-        ulong bb_b;
-        ulong bb_r;
-        ulong bb_q;
-        ulong bb_k;
-        ulong occ_w;
-        ulong occ_b;
-        ulong occ_a;
-        BitSquare en_passant_square;
-        BitColor side_to_move;
-        char castling_rights;
-
-        public BoardState(BitBoardMoveGenerator generator) {
-            bb_P = generator.bitboards[(int)BitPiece.P];
-            bb_N = generator.bitboards[(int)BitPiece.N];
-            bb_B = generator.bitboards[(int)BitPiece.B];
-            bb_R = generator.bitboards[(int)BitPiece.R];
-            bb_Q = generator.bitboards[(int)BitPiece.Q];
-            bb_K = generator.bitboards[(int)BitPiece.K];
-            bb_p = generator.bitboards[(int)BitPiece.p];
-            bb_n = generator.bitboards[(int)BitPiece.n];
-            bb_b = generator.bitboards[(int)BitPiece.b];
-            bb_r = generator.bitboards[(int)BitPiece.r];
-            bb_q = generator.bitboards[(int)BitPiece.q];
-            bb_k = generator.bitboards[(int)BitPiece.k];
-            occ_w = generator.occupancies[COL_WHITE];
-            occ_b = generator.occupancies[COL_BLACK];
-            occ_a = generator.occupancies[COL_ALL];
-            en_passant_square = generator.en_passant_square;
-            side_to_move = generator.side_to_move;
-            castling_rights = generator.castling_rights;
-        }
-
-        public void save_state(BitBoardMoveGenerator generator) {
-            bb_P = generator.bitboards[(int)BitPiece.P];
-            bb_N = generator.bitboards[(int)BitPiece.N];
-            bb_B = generator.bitboards[(int)BitPiece.B];
-            bb_R = generator.bitboards[(int)BitPiece.R];
-            bb_Q = generator.bitboards[(int)BitPiece.Q];
-            bb_K = generator.bitboards[(int)BitPiece.K];
-            bb_p = generator.bitboards[(int)BitPiece.p];
-            bb_n = generator.bitboards[(int)BitPiece.n];
-            bb_b = generator.bitboards[(int)BitPiece.b];
-            bb_r = generator.bitboards[(int)BitPiece.r];
-            bb_q = generator.bitboards[(int)BitPiece.q];
-            bb_k = generator.bitboards[(int)BitPiece.k];
-            occ_w = generator.occupancies[COL_WHITE];
-            occ_b = generator.occupancies[COL_BLACK];
-            occ_a = generator.occupancies[COL_ALL];
-            en_passant_square = generator.en_passant_square;
-            side_to_move = generator.side_to_move;
-            castling_rights = generator.castling_rights;
-        }
-
-        public void restore_state(BitBoardMoveGenerator generator) {
-            generator.bitboards[(int)BitPiece.P] = bb_P;
-            generator.bitboards[(int)BitPiece.N] = bb_N;
-            generator.bitboards[(int)BitPiece.B] = bb_B;
-            generator.bitboards[(int)BitPiece.R] = bb_R;
-            generator.bitboards[(int)BitPiece.Q] = bb_Q;
-            generator.bitboards[(int)BitPiece.K] = bb_K;
-            generator.bitboards[(int)BitPiece.p] = bb_p;
-            generator.bitboards[(int)BitPiece.n] = bb_n;
-            generator.bitboards[(int)BitPiece.b] = bb_b;
-            generator.bitboards[(int)BitPiece.r] = bb_r;
-            generator.bitboards[(int)BitPiece.q] = bb_q;
-            generator.bitboards[(int)BitPiece.k] = bb_k;
-            generator.occupancies[COL_WHITE] = occ_w;
-            generator.occupancies[COL_BLACK] = occ_b;
-            generator.occupancies[COL_ALL] = occ_a;
-            generator.en_passant_square = en_passant_square;
-            generator.side_to_move = side_to_move;
-            generator.castling_rights = castling_rights;
-        }
-    };
 
     public struct BitMove {
         public int source;
@@ -143,6 +117,10 @@ public class BitBoardMoveGenerator {
             is_castle = get_is_castle(move);
         }
     };
+
+    private static readonly string EMPTY_POS = "8/8/8/8/8/8/8/8/8/8 - - -";
+    private static readonly string START_POS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    private static readonly string EVAL_POS = "r3k2r/pP1pqpb1/bn2pnp1/2pPN3/1p2P3/2N2Q1p/PPPBqPPP/R3K2R w KQkq c6 0 1";
 
     // Used for pawns
     private const ulong not_a_file = 18374403900871474942UL;
@@ -296,7 +274,7 @@ public class BitBoardMoveGenerator {
         clear_bit(ref bitboards[(int)side], (int)square);
     }
 
-    private void load_fen(string fen) {
+    public void load_fen(string fen) {
         bitboards = new ulong[12];
         occupancies = new ulong[3];
         side_to_move = BitColor.ALL;
@@ -365,7 +343,7 @@ public class BitBoardMoveGenerator {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int pop_lsb(ref ulong number) {
+    public static int pop_lsb(ref ulong number) {
         int index = get_lsb_index(number);
         clear_bit(ref number, index);
         return index;
@@ -397,6 +375,16 @@ public class BitBoardMoveGenerator {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void clear_bit(ref ulong number, int idx) {
         number &= ~(1UL << idx);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BitPiece get_piece_at(int square) {
+        for (BitPiece piece = BitPiece.P; piece <= BitPiece.k; piece++) {
+            if (get_bit(bitboards[(int)piece], square)) {
+                return piece;
+            }
+        }
+        return BitPiece.invalid;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -797,6 +785,7 @@ public class BitBoardMoveGenerator {
         if ((castling_rights & (char)BitCastling.WK) > 0) {
             if (!get_bit(occupancies[COL_ALL], (int)BitSquare.f1)
             && !get_bit(occupancies[COL_ALL], (int)BitSquare.g1)
+            && !is_square_attacked(BitSquare.e1, BitColor.BLACK)
             && !is_square_attacked(BitSquare.f1, BitColor.BLACK)
             && !is_square_attacked(BitSquare.g1, BitColor.BLACK)) {
                 moves.Add(encode_move((int)BitSquare.e1, (int)BitSquare.g1, BitPiece.K, BitPiece.invalid, false, false, false, true));
@@ -808,7 +797,8 @@ public class BitBoardMoveGenerator {
             && !get_bit(occupancies[COL_ALL], (int)BitSquare.d1)
             && !is_square_attacked(BitSquare.b1, BitColor.BLACK)
             && !is_square_attacked(BitSquare.c1, BitColor.BLACK)
-            && !is_square_attacked(BitSquare.d1, BitColor.BLACK)) {
+            && !is_square_attacked(BitSquare.d1, BitColor.BLACK)
+            && !is_square_attacked(BitSquare.e1, BitColor.BLACK)) {
                 moves.Add(encode_move((int)BitSquare.e1, (int)BitSquare.c1, BitPiece.K, BitPiece.invalid, false, false, false, true));
             }
         }
@@ -818,6 +808,7 @@ public class BitBoardMoveGenerator {
         if ((castling_rights & (char)BitCastling.BK) > 0) {
             if (!get_bit(occupancies[COL_ALL], (int)BitSquare.f8)
             && !get_bit(occupancies[COL_ALL], (int)BitSquare.g8)
+            && !is_square_attacked(BitSquare.e8, BitColor.WHITE)
             && !is_square_attacked(BitSquare.f8, BitColor.WHITE)
             && !is_square_attacked(BitSquare.g8, BitColor.WHITE)) {
                 moves.Add(encode_move((int)BitSquare.e8, (int)BitSquare.g8, BitPiece.k, BitPiece.invalid, false, false, false, true));
@@ -829,7 +820,8 @@ public class BitBoardMoveGenerator {
             && !get_bit(occupancies[COL_ALL], (int)BitSquare.d8)
             && !is_square_attacked(BitSquare.b8, BitColor.WHITE)
             && !is_square_attacked(BitSquare.c8, BitColor.WHITE)
-            && !is_square_attacked(BitSquare.d8, BitColor.WHITE)) {
+            && !is_square_attacked(BitSquare.d8, BitColor.WHITE)
+            && !is_square_attacked(BitSquare.e8, BitColor.WHITE)) {
                 moves.Add(encode_move((int)BitSquare.e8, (int)BitSquare.c8, BitPiece.k, BitPiece.invalid, false, false, false, true));
             }
         }
@@ -950,7 +942,7 @@ public class BitBoardMoveGenerator {
         if (move.is_en_passant) {
             int bit_idx = (1 - (int)side_to_move) * (int)BitPiece.p;
             int en_pass_idx = move.target + (8 - (int)side_to_move*16);
-            clear_bit(ref bitboards[bit_idx], move.target - en_pass_idx);
+            clear_bit(ref bitboards[bit_idx], en_pass_idx);
         }
 
         en_passant_square = BitSquare.invalid;
@@ -959,6 +951,7 @@ public class BitBoardMoveGenerator {
             en_passant_square = (BitSquare)move.target + (8 - (int)side_to_move * 16);
         }
 
+        int king_idx = ((int)side_to_move) * (int)BitPiece.p + (int)BitPiece.K;
         if (move.is_castle) {
             switch ((BitSquare)move.target) {
                 case BitSquare.g1:
@@ -996,7 +989,6 @@ public class BitBoardMoveGenerator {
 
         occupancies[COL_ALL] = occupancies[COL_WHITE] | occupancies[COL_BLACK];
 
-        int king_idx = ((int)side_to_move) * (int)BitPiece.p + (int)BitPiece.K;
         side_to_move = 1 - side_to_move;
         if (is_square_attacked((BitSquare)get_lsb_index(bitboards[king_idx]), side_to_move)) {
             state.restore_state(this);
@@ -1311,51 +1303,4 @@ public class BitBoardMoveGenerator {
         }
     }
 
-    //public ulong[] legacy_converter(Piece[,] board) {
-    //    ulong bitboard = 0;
-    //    for (int rank = 0; rank < board.Length; rank++) {
-    //        for (int file = 0; file < board.Length; file++) {
-    //            if (board[rank, file] != null) {
-    //                bitboard = set_bit(bitboard, rank * 8 + file);
-    //            }
-    //        }
-    //    }
-    //    return null;
-    //}
-
-    public static Move convert_move_to_legacy(int enc_move) {
-        BitMove move = new BitMove(enc_move);
-        Coordinate begin = new Coordinate(move.source / 8, move.source % 8);
-        Coordinate end = new Coordinate(move.target / 8, move.target % 8);
-        Piece held = ChessGame.get_piece(begin);
-        Piece target = ChessGame.get_piece(end);
-        if (move.is_en_passant) {
-            target = ChessGame.get_piece(new Coordinate(begin.rank, end.file));
-            return new Move(held, target, begin, end, true, 0);
-        }
-        else if (move.is_castle) {
-            int dir = move.target % 8 > 3 ? 1 : -1;
-            target = ChessGame.get_piece(new Coordinate(begin.rank, move.target % 8 > 3 ? 7 : 0));
-            return new Move(held, target, begin, end, false, dir);
-        }
-        else {
-            return new Move(held, target, begin, end);
-        }
-    }
-
-    public static void test_init() {
-        init_pcg(0, 0);
-        BitBoardMoveGenerator move_gen = new BitBoardMoveGenerator();
-        move_gen.load_fen(EVAL_POS);
-        List<int> moves = move_gen.generate_moves(BitColor.WHITE);
-        BoardState state = new BoardState(move_gen);
-        move_gen.print_board();
-        for (int i = 0; i < moves.Count; i++) {
-            if (!move_gen.make_move(moves[i])) {
-                continue;
-            }
-            move_gen.print_board();
-            state.restore_state(move_gen);
-        }
-    }
 }
