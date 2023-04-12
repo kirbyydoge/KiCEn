@@ -47,6 +47,11 @@ public static class ChessGame {
         return generator.generate_moves(generator.side_to_move);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<int> generate_moves_auto_sorted() {
+        return generator.generate_moves_sorted(generator.side_to_move);
+    }
+
     public static List<int> generate_legal_moves_auto() { 
         List<int> moves = generator.generate_moves(generator.side_to_move);
         List<int> legal_moves = new List<int>(moves.Count);

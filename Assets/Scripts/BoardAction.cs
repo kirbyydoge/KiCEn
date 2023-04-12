@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 public class BoardAction : MonoBehaviour {
 
@@ -33,6 +34,9 @@ public class BoardAction : MonoBehaviour {
     private bool moves_valid;
     private bool notify_flag;
     private float start_timer;
+    private bool ai_vs_ai;
+    private float ai_timer;
+    private float ai_total_elapsed;
 
     void Start() {
         earlier_states = new List<BoardState>();
@@ -46,6 +50,8 @@ public class BoardAction : MonoBehaviour {
         held_renderer.enabled = false;
         available_moves = null;
         moves_valid = false;
+        ai_vs_ai = p1_ai_type != AIType.Human && p2_ai_type != AIType.Human;
+        ai_total_elapsed = 0;
         switch (p1_ai_type) {
             case AIType.Random:
                 p1_ai = new RandomAI();
@@ -84,6 +90,9 @@ public class BoardAction : MonoBehaviour {
         AIType next_ai = p1_turn ? p2_ai_type : p1_ai_type;
         IChessAI cur_ai = p1_turn ? p1_ai : p2_ai;
         world_pos.z = 0;
+        if (ai_vs_ai && Time.time < ai_timer) {
+            return;
+        }
         if (!moves_valid) {
             all_moves = ChessGame.generate_legal_moves_auto();
             moves_valid = true;
@@ -145,21 +154,34 @@ public class BoardAction : MonoBehaviour {
                     held_renderer.enabled = false;
                     board_renderer.enable_cell(begin);
                     board_renderer.render_pieces();
+                    board_renderer.render_made_move(begin, end);
                 }
                 break;
             case ActionState.OPPONENT:
                 state = next_ai == AIType.Human ? ActionState.EMPTY : ActionState.OPPONENT;
                 float start = Time.realtimeSinceStartup;
+                //Profiler.logFile = @"C:\Users\aqwog\Desktop\Profiler.raw";
+                //Profiler.enableBinaryLog = true;
+                //Profiler.enabled = true;
                 int ai_move = cur_ai.play_turn();
+                //Profiler.enabled = false;
+                //Profiler.logFile = "";
                 float stop = Time.realtimeSinceStartup;
                 ChessGame.make_move(ai_move);
                 Debug.Log("Evaluated " + cur_ai.get_evaluated_moves() + " positions in " + (stop - start) + " s.");
+                ai_total_elapsed += stop - start;
+                Debug.Log("Total elapsed time: " + ai_total_elapsed);
                 BitBoardMoveGenerator.BitMove parsed = new BitBoardMoveGenerator.BitMove(ai_move);
                 Debug.Log($"{(BitPiece)parsed.piece}: {(BitSquare)parsed.source} -> {(BitSquare)parsed.target}");
                 earlier_states.Add(new BoardState(ChessGame.generator));
                 moves_valid = false;
                 board_renderer.render_pieces();
+                board_renderer.render_made_move(
+                    new Coordinate(7 - parsed.source / 8, parsed.source % 8),
+                    new Coordinate(7 - parsed.target / 8, parsed.target % 8)
+                );
                 p1_turn = !p1_turn;
+                ai_timer = Time.time + 1;
                 break;
             case ActionState.GAME_OVER:
                 if (Input.GetKeyDown(KeyCode.R)) {

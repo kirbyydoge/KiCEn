@@ -11,4 +11,13 @@ public class RandomAI : IChessAI {
     public int get_evaluated_moves() {
         return 1;
     }
+
+    public void notify_move(int move) {
+
+    }
+
+    public void retake() {
+
+    }
+
 }

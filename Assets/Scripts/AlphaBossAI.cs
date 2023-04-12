@@ -7,55 +7,72 @@ public class AlphaBossAI : IChessAI {
     private const int NEGATIVE_INF = -999999999; // int.MinValue overflows
     private const int POSITIVE_INF = 999999999;
     private int evaluated_moves;
-    private Logger logger;
 
     public AlphaBossAI(int depth) {
         this.depth = depth;
-        logger = new Logger(@"C:\Users\aqwog\Desktop\AI.log");
     }
 
     public int play_turn() {
         evaluated_moves = 0;
-        return alpha_beta_tree_search(depth);
+        return alpha_beta_tree_search(depth, ChessGame.generator.side_to_move == BitColor.WHITE);
     }
 
     public int get_evaluated_moves() {
         return evaluated_moves;
     }
 
-    private int alpha_beta_tree_search(int depth) {
+    public void notify_move(int move) {
+
+    }
+
+    public void retake() {
+
+    }
+
+    private int alpha_beta_tree_search(int depth, bool maximizing_player) {
         List<int> all_moves = ChessGame.generator.generate_moves(ChessGame.generator.side_to_move);
-        int max_score = NEGATIVE_INF - depth;
-        int max_move = all_moves[0];
         evaluated_moves = all_moves.Count;
         BoardState state = new BoardState(ChessGame.generator);
-        foreach (int m in all_moves) {
-            bool valid_move = ChessGame.generator.make_move(m);
-            if (!valid_move) {
+        int best_eval;
+        int best_move = all_moves[0];
+        if (maximizing_player) {
+            best_eval = NEGATIVE_INF - 1000;
+            foreach (int m in all_moves) {
+                bool valid_move = ChessGame.generator.make_move(m);
+                if (!valid_move) {
+                    continue;
+                }
+                int cur_score = alpha_beta_tree_search_aux(depth - 1, NEGATIVE_INF, POSITIVE_INF, false);
                 state.restore_state(ChessGame.generator);
-                continue;
-            }
-            int cur_score = alpha_beta_tree_search_aux(depth - 1, NEGATIVE_INF, POSITIVE_INF, false);
-            state.restore_state(ChessGame.generator);
-            if (cur_score > max_score) {
-                max_score = cur_score;
-                max_move = m;
+                if (cur_score > best_eval) {
+                    best_eval = cur_score;
+                    best_move = m;
+                }
             }
         }
-        return max_move;
+        else {
+            best_eval = POSITIVE_INF + 1000;
+            foreach (int m in all_moves) {
+                bool valid_move = ChessGame.generator.make_move(m);
+                if (!valid_move) {
+                    continue;
+                }
+                int cur_score = alpha_beta_tree_search_aux(depth - 1, NEGATIVE_INF, POSITIVE_INF, true);
+                state.restore_state(ChessGame.generator);
+                if (cur_score < best_eval) {
+                    best_eval = cur_score;
+                    best_move = m;
+                }
+            }
+        }
+        return best_move;
     }
 
     private int alpha_beta_tree_search_aux(int depth, int alpha, int beta, bool maximizing_player) {
         if (depth == 0) {
-            int start_moves = evaluated_moves;
-            float start = Time.realtimeSinceStartup;
-            int eval = alpha_beta_tree_search_takes(alpha, beta, maximizing_player);
-            int stop_moves = evaluated_moves;
-            float stop = Time.realtimeSinceStartup;
-            logger.WriteLine("Evaluated " + (stop_moves - start_moves) + " takes in " + (stop - start) + " s.");
-            return eval;
+            return alpha_beta_tree_search_takes(alpha, beta, maximizing_player);
         }
-        List<int> all_moves = ChessGame.generator.generate_moves(ChessGame.generator.side_to_move);
+        List<int> all_moves = ChessGame.generate_moves_auto_sorted();
         BoardState state = new BoardState(ChessGame.generator);
         evaluated_moves += all_moves.Count;
         int value;
@@ -64,7 +81,6 @@ public class AlphaBossAI : IChessAI {
             foreach (int m in all_moves) {
                 bool valid_move = ChessGame.generator.make_move(m);
                 if (!valid_move) {
-                    state.restore_state(ChessGame.generator);
                     continue;
                 }
                 value = Mathf.Max(value, alpha_beta_tree_search_aux(depth - 1, alpha, beta, false));
@@ -80,7 +96,6 @@ public class AlphaBossAI : IChessAI {
             foreach (int m in all_moves) {
                 bool valid_move = ChessGame.generator.make_move(m);
                 if (!valid_move) {
-                    state.restore_state(ChessGame.generator);
                     continue;
                 }
                 value = Mathf.Min(value, alpha_beta_tree_search_aux(depth - 1, alpha, beta, true));
@@ -95,19 +110,19 @@ public class AlphaBossAI : IChessAI {
     }
 
     private int alpha_beta_tree_search_takes(int alpha, int beta, bool maximizing_player) {
-        List<int> all_moves = ChessGame.generate_moves_auto().FindAll(m => BitBoardMoveGenerator.get_is_captures(m));
-        if (all_moves.Count == 0) {
-            return evaluate_board();
-        }
+        List<int> all_moves = ChessGame.generate_moves_auto_sorted();
         evaluated_moves += all_moves.Count;
         BoardState state = new BoardState(ChessGame.generator);
         int value;
         if (maximizing_player) {
-            value = NEGATIVE_INF - depth;
+            value = evaluate_board();
+            alpha = Mathf.Max(alpha, value);
+            if (value >= beta) {
+                return value;
+            }
             foreach (int m in all_moves) {
-                bool valid_move = ChessGame.generator.make_move(m);
+                bool valid_move = ChessGame.generator.make_capture(m);
                 if (!valid_move) {
-                    state.restore_state(ChessGame.generator);
                     continue;
                 }
                 value = Mathf.Max(value, alpha_beta_tree_search_takes(alpha, beta, false));
@@ -119,9 +134,13 @@ public class AlphaBossAI : IChessAI {
             }
         }
         else {
-            value = POSITIVE_INF + depth;
+            value = evaluate_board();
+            beta = Mathf.Min(beta, value);
+            if (value <= alpha) {
+                return value;
+            }
             foreach (int m in all_moves) {
-                bool valid_move = ChessGame.generator.make_move(m);
+                bool valid_move = ChessGame.generator.make_capture(m);
                 if (!valid_move) {
                     state.restore_state(ChessGame.generator);
                     continue;
@@ -137,34 +156,34 @@ public class AlphaBossAI : IChessAI {
         return value;
     }
 
-    // TODO: Need IScoringFunction for generalization as well
-    public int evaluate_board() {
+    public static int evaluate_board() {
         int score = 0;
         int white_mul = ChessGame.generator.side_to_move == BitColor.WHITE ? 1 : -1;
-        int black_mul = -white_mul;
-        List<int> all_moves = ChessGame.generator.generate_moves(ChessGame.generator.side_to_move);
-        if (all_moves.Count == 0) {
-            return black_mul * int.MaxValue;
+        BitFinish status = ChessGame.generator.is_check_or_stale_mate();
+        if (status == BitFinish.CHECKMATE) {
+            return -white_mul * POSITIVE_INF;
         }
-        for (int i = (int)BitPiece.P; i <= (int)BitPiece.K; i++) {
-            score += white_mul * BitBoardMoveGenerator.pop_count(ChessGame.generator.bitboards[i]) * piece_score((BitPiece)(i % (int)BitPiece.p));
+        else if (status == BitFinish.STALEMATE) {
+            return 0;
         }
-        for (int i = (int)BitPiece.p; i <= (int)BitPiece.k; i++) {
-            score += black_mul * BitBoardMoveGenerator.pop_count(ChessGame.generator.bitboards[i]) * piece_score((BitPiece)(i % (int)BitPiece.p));
+        for (int i = (int)BitPiece.P; i < (int)BitPiece.K; i++) {
+            ulong bitboard = ChessGame.generator.bitboards[i];
+            while (bitboard > 0) {
+                int square = BitBoardMoveGenerator.pop_lsb(ref bitboard);
+                score += PositionalScore.piece_score[i];
+                score += PositionalScore.positional_score[i, square];
+            }
+        }
+        for (int i = (int)BitPiece.p; i < (int)BitPiece.k; i++) {
+            ulong bitboard = ChessGame.generator.bitboards[i];
+            int piece_idx = i - (int)BitPiece.p;
+            while (bitboard > 0) {
+                int square = BitBoardMoveGenerator.pop_lsb(ref bitboard);
+                square = square % 8 + (7 - square / 8) * 8; // mirror horizontally
+                score -= PositionalScore.piece_score[piece_idx];
+                score -= PositionalScore.positional_score[piece_idx, square];
+            }
         }
         return score;
-    }
-
-    // TODO: Convert to map? Generalize? IDK
-    public int piece_score(BitPiece p) {
-        switch (p) {
-            case BitPiece.P: return 100;
-            case BitPiece.K: return 99999; // Needs to be arbitrarily large
-            case BitPiece.N: return 300;
-            case BitPiece.B: return 350;
-            case BitPiece.Q: return 900;
-            case BitPiece.R: return 500;
-        }
-        return 0;
     }
 }

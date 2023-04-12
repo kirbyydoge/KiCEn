@@ -14,32 +14,58 @@ public class NaiveTreeAI : IChessAI {
 
     public int play_turn() {
         evaluated_moves = 0;
-        return naive_tree_search(depth);
+        return naive_tree_search(depth, ChessGame.generator.side_to_move == BitColor.WHITE);
     }
 
     public int get_evaluated_moves() {
         return evaluated_moves;
     }
 
-    private int naive_tree_search(int depth) {
+    public void notify_move(int move) {
+
+    }
+
+    public void retake() {
+
+    }
+
+    private int naive_tree_search(int depth, bool maximizing_player) {
         List<int> all_moves = ChessGame.generator.generate_moves(ChessGame.generator.side_to_move);
-        int max_score = NEGATIVE_INF - depth;
-        int max_move = all_moves[0];
         evaluated_moves = all_moves.Count;
         BoardState state = new BoardState(ChessGame.generator);
-        foreach (int m in all_moves) {
-            bool valid_move = ChessGame.generator.make_move(m);
-            if (!valid_move) {
-                continue;
-            }
-            int cur_score = naive_tree_search_aux(depth - 1, false);
-            state.restore_state(ChessGame.generator);
-            if (cur_score > max_score) {
-                max_score = cur_score;
-                max_move = m;
+        int best_eval;
+        int best_move = all_moves[0];
+        if (maximizing_player) {
+            best_eval = NEGATIVE_INF;
+            foreach (int m in all_moves) {
+                bool valid_move = ChessGame.generator.make_move(m);
+                if (!valid_move) {
+                    continue;
+                }
+                int cur_score = naive_tree_search_aux(depth - 1, false);
+                state.restore_state(ChessGame.generator);
+                if (cur_score > best_eval) {
+                    best_eval = cur_score;
+                    best_move = m;
+                }
             }
         }
-        return max_move;
+        else {
+            best_eval = POSITIVE_INF;
+            foreach (int m in all_moves) {
+                bool valid_move = ChessGame.generator.make_move(m);
+                if (!valid_move) {
+                    continue;
+                }
+                int cur_score = naive_tree_search_aux(depth - 1, true);
+                state.restore_state(ChessGame.generator);
+                if (cur_score < best_eval) {
+                    best_eval = cur_score;
+                    best_move = m;
+                }
+            }
+        }
+        return best_move;
     }
 
     private int naive_tree_search_aux(int depth, bool maximizing_player) {
@@ -75,34 +101,36 @@ public class NaiveTreeAI : IChessAI {
         return value;
     }
 
-    // TODO: Need IScoringFunction for generalization as well
-    public int evaluate_board() {
+    public static int evaluate_board() {
         int score = 0;
         int white_mul = ChessGame.generator.side_to_move == BitColor.WHITE ? 1 : -1;
-        int black_mul = -white_mul;
-        List<int> all_moves = ChessGame.generator.generate_moves(ChessGame.generator.side_to_move);
-        if (all_moves.Count == 0) {
-            return black_mul * int.MaxValue;
+        BitFinish status = ChessGame.generator.is_check_or_stale_mate();
+        if (status == BitFinish.CHECKMATE) {
+            return -white_mul * POSITIVE_INF;
         }
-        for (int i = (int)BitPiece.P; i <= (int)BitPiece.K; i++) {
-            score += white_mul * BitBoardMoveGenerator.pop_count(ChessGame.generator.bitboards[i]) * piece_score((BitPiece)(i % (int)BitPiece.p));
+        else if (status == BitFinish.STALEMATE) {
+            return 0;
         }
-        for (int i = (int)BitPiece.p; i <= (int)BitPiece.k; i++) {
-            score += black_mul * BitBoardMoveGenerator.pop_count(ChessGame.generator.bitboards[i]) * piece_score((BitPiece)(i % (int)BitPiece.p));
+        for (int i = (int)BitPiece.P; i < (int)BitPiece.K; i++) {
+            ulong bitboard = ChessGame.generator.bitboards[i];
+            while (bitboard > 0) {
+                int square = BitBoardMoveGenerator.pop_lsb(ref bitboard);
+                score += PositionalScore.piece_score[i];
+                if (i != (int)BitPiece.K) {
+                    score += PositionalScore.positional_score[i, square];
+                }
+            }
+        }
+        for (int i = (int)BitPiece.p; i < (int)BitPiece.k; i++) {
+            ulong bitboard = ChessGame.generator.bitboards[i];
+            int piece_idx = i - (int)BitPiece.p;
+            while (bitboard > 0) {
+                int square = BitBoardMoveGenerator.pop_lsb(ref bitboard);
+                square = square % 8 + (7 - square / 8) * 8; // mirror horizontally
+                score -= PositionalScore.piece_score[piece_idx];
+                score -= PositionalScore.positional_score[piece_idx, square];
+            }
         }
         return score;
-    }
-
-    // TODO: Convert to map? Generalize? IDK
-    public int piece_score(BitPiece p) {
-        switch (p) {
-            case BitPiece.P: return 100;
-            case BitPiece.K: return 99999; // Needs to be arbitrarily large
-            case BitPiece.N: return 300;
-            case BitPiece.B: return 350;
-            case BitPiece.Q: return 900;
-            case BitPiece.R: return 500;
-        }
-        return 0;
     }
 }

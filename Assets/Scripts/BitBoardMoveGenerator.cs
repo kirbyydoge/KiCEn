@@ -32,6 +32,10 @@ public enum BitCastling {
     WK = 1, WQ = 2, BK = 4, BQ = 8
 };
 
+public enum BitFinish {
+    PLAYING, CHECKMATE, STALEMATE
+};
+
 public struct BoardState {
     ulong bb_P;
     ulong bb_N;
@@ -272,6 +276,28 @@ public class BitBoardMoveGenerator {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void clear_occupancy(BitColor side, BitSquare square) {
         clear_bit(ref bitboards[(int)side], (int)square);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int get_move_score(int move) {
+        if (get_is_captures(move)) {
+            int attacking_piece = get_piece(move);
+            int target_piece = 0;
+            int target_sq = get_target(move);
+
+            int offset = (1 - (int)side_to_move) * (int)(BitPiece.p);
+
+            for (int i = (int)BitPiece.P; i <= (int)BitPiece.K; i++) {
+                if (get_bit(bitboards[i], target_sq)) {
+                    target_piece = i;
+                    break;
+                }
+            }
+
+            return PositionalScore.captures_lookup[attacking_piece, target_piece];
+        }
+
+        return 0;
     }
 
     public void load_fen(string fen) {
@@ -651,7 +677,7 @@ public class BitBoardMoveGenerator {
         }
     }
 
-    private bool is_square_attacked(BitSquare square, BitColor attacker) {
+    public bool is_square_attacked(BitSquare square, BitColor attacker) {
         int not_attacker = 1 - (int)attacker;
         // This is a hack for branchless execution.
         // WHITE and WhitePawn (P) are defined as 0
@@ -1029,6 +1055,29 @@ public class BitBoardMoveGenerator {
         generate_queen_moves(moves, (int)BitPiece.Q + offset, (int)side);
         generate_king_moves(moves, (int)BitPiece.K + offset, (int)side);
         return moves;
+    }
+
+    public List<int> generate_moves_sorted(BitColor side) {
+        List<int> moves = generate_moves(side);
+        moves.Sort((a, b) => get_move_score(b).CompareTo(get_move_score(a)));
+        return moves;
+    }
+
+    public BitFinish is_check_or_stale_mate() {
+        List<int> moves = generate_moves(side_to_move);
+        BoardState state = new BoardState(this);
+        bool king_under_attack = is_square_attacked(
+            (BitSquare)get_lsb_index(bitboards[side_to_move == BitColor.WHITE ? (int)BitPiece.K : (int)BitPiece.k]),
+            side_to_move == BitColor.WHITE ? BitColor.BLACK : BitColor.WHITE
+        );
+        bool legal_move = false;
+        int i = 0;
+        do {
+            legal_move = make_move(moves[i++]);
+            state.restore_state(this);
+        } while (!legal_move && i < moves.Count);
+        return  legal_move          ? BitFinish.PLAYING :
+                king_under_attack   ? BitFinish.CHECKMATE : BitFinish.STALEMATE;
     }
 
     public static void print_bitboard(ulong bitboard) {

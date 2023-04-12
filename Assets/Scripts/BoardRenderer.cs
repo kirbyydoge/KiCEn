@@ -12,7 +12,8 @@ public class BoardRenderer : MonoBehaviour {
     public Color color_white_square = new Color(255, 255, 255, 255);
     public Color color_dark_square = new Color(10, 10, 10, 255);
     public Color color_capture_square = new Color(200, 50, 50, 255);
-    public Color color_just_moved = new Color(50, 200, 50, 255);
+    public Color color_moved_light = new Color(50, 150, 50, 255);
+    public Color color_moved_dark = new Color(50, 200, 50, 255);
 
     public Color bg_white_piece = new Color(255, 255, 255, 255);
     public Color bg_dark_piece = new Color(255, 255, 255, 255);
@@ -150,6 +151,11 @@ public class BoardRenderer : MonoBehaviour {
                 piece_renderers[rank, file].color = bg_dark_piece;
             }
         }
+    }
+
+    public void render_made_move(Coordinate begin, Coordinate end) {
+        tile_renderers[begin.rank, begin.file].color = (begin.rank + begin.file) % 2 == 0 ? color_moved_dark : color_moved_light;
+        tile_renderers[end.rank, end.file].color = (end.rank + end.file) % 2 == 0 ? color_moved_dark : color_moved_light;
     }
 
     public void render_moves(List<int> moves) {
