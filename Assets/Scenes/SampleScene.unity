@@ -292,8 +292,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   main_camera: {fileID: 519420031}
-  p1_ai_type: 4
-  p1_search_depth: 5
+  p1_ai_type: 0
+  p1_search_depth: 4
   p2_ai_type: 0
-  p2_search_depth: 4
+  p2_search_depth: 1
   ai_delay: 0
