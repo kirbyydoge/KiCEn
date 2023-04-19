@@ -18,6 +18,7 @@ public class BoardAction : MonoBehaviour {
     public int p1_search_depth = 5;
     public AIType p2_ai_type;
     public int p2_search_depth = 5;
+    public float ai_delay = 0.05f;
 
     private IChessAI p1_ai;
     private IChessAI p2_ai;
@@ -97,7 +98,7 @@ public class BoardAction : MonoBehaviour {
             all_moves = ChessGame.generate_legal_moves_auto();
             moves_valid = true;
         }
-        if (ChessGame.is_check_mate) {
+        if (ChessGame.generator.is_check_or_stale_mate() != BitFinish.PLAYING) {
             state = ActionState.GAME_OVER;
             if (notify_flag) {
                 notify_flag = false;
@@ -181,7 +182,7 @@ public class BoardAction : MonoBehaviour {
                     new Coordinate(7 - parsed.target / 8, parsed.target % 8)
                 );
                 p1_turn = !p1_turn;
-                ai_timer = Time.time + 1;
+                ai_timer = Time.time + ai_delay;
                 break;
             case ActionState.GAME_OVER:
                 if (Input.GetKeyDown(KeyCode.R)) {
